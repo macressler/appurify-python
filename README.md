@@ -5,7 +5,7 @@ The official Python client for the [Appurify](http://www.appurify.com) API.
 ### Installation
 
 ```
-pip install appurify­0.1.7.tar.gz
+pip install appurify­0.187.tar.gz
 ```
 
 This will install any missing dependencies and add two executable scripts to your bin folder:
