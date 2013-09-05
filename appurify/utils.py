@@ -26,24 +26,24 @@ def log(msg, level=None): # pragma: no cover
 
 def url(resource): # pragma: no cover
     """(defaults: https://live.appurify.com:443/resource/)
-    
+
     Url can be overridden by specifying following environment variables
     APPURIFY_API_PROTO (default: https)
     APPURIFY_API_HOST (default: live.appurify.com)
     APPURIFY_API_PORT (default: 443)
-    
+
     Clients and Customers MUST not override this unless instructed by Appurify devs
     """
     return '/'.join(['%s://%s:%s/resource' % (
-        os.environ.get('APPURIFY_API_PROTO', constants.API_PROTO), 
-        os.environ.get('APPURIFY_API_HOST', constants.API_HOST), 
+        os.environ.get('APPURIFY_API_PROTO', constants.API_PROTO),
+        os.environ.get('APPURIFY_API_HOST', constants.API_HOST),
         os.environ.get('APPURIFY_API_PORT', str(constants.API_PORT))
     ), resource]) + '/'
 
 def user_agent(): # pragma: no cover
     """returns string representation of user-agent"""
     implementation = platform.python_implementation()
-    
+
     if implementation == 'CPython':
         version = platform.python_version()
     elif implementation == 'PyPy':
@@ -54,14 +54,14 @@ def user_agent(): # pragma: no cover
         version = platform.python_version()
     else:
         version = 'Unknown'
-    
+
     try:
         system = platform.system()
         release = platform.release()
     except IOError:
         system = 'Unknown'
         release = 'Unknown'
-    
+
     return " ".join([
         'appurify-client/%s' % constants.__version__,
         'python-requests/%s' % requests.__version__,
