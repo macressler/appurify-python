@@ -34,7 +34,9 @@ def access_token_list(api_key, api_secret, page_no=1, page_size=10):
     return get('access_token/list', {'key':api_key, 'secret':api_secret, 'page_no':page_no, 'page_size':page_size})
 
 def access_token_usage(api_key, api_secret, access_token, page_no=1, page_size=10):
-    """Get details on device time used for a particular key/secret pair"""
+    """ DEPRECATED. Will be removed in future versions.
+    Get details on device time used for a particular key/secret pair
+    """
     return get('access_token/usage', {'key':api_key, 'secret':api_secret, 'access_token':access_token, 'page_no':page_no, 'page_size':page_size})
 
 def access_token_validate(access_token):
@@ -82,9 +84,11 @@ def apps_upload(access_token, source, source_type, type=None):
 def tests_list(access_token):
     return get('tests/list', {'access_token':access_token})
 
-def tests_upload(access_token, source, source_type, type):
+def tests_upload(access_token, source, source_type, type, app_id = None):
     files = None if source_type == 'url' else {'source':source}
     data = {'access_token':access_token, 'source_type':source_type, 'test_type': type}
+    if app_id:
+        data['app_id'] = app_id
     if source_type == 'url': data['source'] = source
     return post('tests/upload', data, files)
 
@@ -112,13 +116,13 @@ def print_single_test_response(test_response):
         for response_type in ['output', 'errors', 'exception', 'number_passes', 'number_fails']:
             response_text = test_response[response_type]
             log("Test %s: %s" % (response_type, response_text))
-        
+
         response_pass = test_response['pass']
         if response_pass:
             log("All tests passed!")
         else:
             log("There were test failures")
-        
+
         results_url = test_response['url']
         log("Detailed results url: %s" % results_url)
     except Exception as e:
@@ -171,7 +175,7 @@ def main(api_key=None, api_secret=None, access_token=None, access_token_tag=None
         else:
             log('access_token_generate failed with response %s' % r.text)
             return 1
-    
+
     if not app_id:
         log('uploading app file...')
         if app_src is None and test_type in constants.NO_APP_SOURCE:
@@ -186,16 +190,17 @@ def main(api_key=None, api_secret=None, access_token=None, access_token_tag=None
         else:
             log('apps_upload failed with response %s' % r.text)
             return 1
-    
+
     if not test_id:
         log('uploading test file...')
         if not test_src and test_type not in constants.NO_TEST_SOURCE:
             log('test_type %s requires a test source' % test_type)
             return 1
-
+        if not app_id:
+            app_id = None
         if test_src:
             test_file_source = open(test_src, 'rb') if test_src_type != 'url' else test_src
-            r = tests_upload(access_token, test_file_source, test_src_type, test_type)
+            r = tests_upload(access_token, test_file_source, test_src_type, test_type, app_id=app_id)
         elif test_type in constants.NO_TEST_SOURCE:
             r = tests_upload(access_token, None, 'url', test_type)
 
@@ -205,10 +210,10 @@ def main(api_key=None, api_secret=None, access_token=None, access_token_tag=None
         else:
             log('tests_upload failed with response %s' % r.text)
             return 1
-    
+
     if test_id and config_src:
         log('uploading config file...')
-        config_src = open(config_src, 'rb') 
+        config_src = open(config_src, 'rb')
         r = config_upload(access_token, config_src, test_id)
         if r.status_code == 200:
             log('config file upload success, test_id:%s' % test_id)
@@ -226,10 +231,11 @@ def main(api_key=None, api_secret=None, access_token=None, access_token_tag=None
         log('tests_run success scheduling test test_run_id:%s' % test_run_id)
 
         test_status = None
-        timeout = 0
+        runtime = 0
+        timeout = int(os.environ.get('APPURIFY_API_TIMEOUT', constants.API_TIMEOUT_SEC))
         poll_every = os.environ.get('APPURIFY_API_POLL_DELAY', constants.API_POLL_SEC)
 
-        while test_status != 'complete' and timeout < os.environ.get('APPURIFY_API_TIMEOUT', constants.API_TIMEOUT_SEC):
+        while test_status != 'complete' and runtime < timeout:
             time.sleep(poll_every)
             r = tests_check_result(access_token, test_run_id)
             test_status_response = r.json()['response']
@@ -240,20 +246,22 @@ def main(api_key=None, api_secret=None, access_token=None, access_token_tag=None
                 log(json.dumps(test_response))
                 log("**** COMPLETE - JSON SUMMARY ENDS ****")
             else:
-                log("%s sec elapsed(status: %s)" % (str(timeout), test_status))
+                log("%s sec elapsed(status: %s)" % (str(runtime), test_status))
                 if 'message' in test_status_response:
                     log(test_status_response['message'])
-            timeout = timeout + poll_every
+            runtime = runtime + poll_every
 
         if 'complete_count' in test_status_response:
             print_multi_test_responses(test_response)
             if result_dir:
                 download_multi_test_response(test_response, result_dir)
-        else:
+        elif runtime < timeout:
             print_single_test_response(test_response)
             if result_dir:
                 result_url = test_response['url']
                 download_test_response(result_url, result_dir)
+        else:
+            log('test timed out')
 
         if 'pass' in test_status_response:
             all_pass = test_status_response['pass']
@@ -264,7 +272,7 @@ def main(api_key=None, api_secret=None, access_token=None, access_token_tag=None
     else:
         log('tests_run failed scheduling test with response %s' % r.text)
         all_pass = False
-    
+
     exit_code = 0 if all_pass else 1
     log('done with exit code %s' % exit_code)
     return exit_code
@@ -282,44 +290,44 @@ def init():
         description='Appurify developer REST API client v%s' % constants.__version__,
         epilog='Email us at %s for further information' % constants.__contact__
     )
-    
+
     parser.add_argument('--api-key', help='Appurify developer key')
     parser.add_argument('--api-secret', help='Appurify developer secret')
     parser.add_argument('--access-token-tag', action='append', help='colon separated key:value tag for access_token to be generated')
     parser.add_argument('--access-token', help='Specify to use this access token instead of generating a new one')
-    
+
     parser.add_argument('--app-src', help='Path or Url of app file to upload')
     parser.add_argument('--app-test-type', help='Specify if app file belongs to a test type')
     parser.add_argument('--app-id', help='Specify to use previously uploaded app file')
-    
+
     parser.add_argument('--test-src', help='Path or Url of test file to upload')
     parser.add_argument('--test-type', help='Type of test being uploaded')
     parser.add_argument('--test-id', help='Specify to use previously uploaded test file')
-    
+
     parser.add_argument('--device-type-id', help='Device type to reserve and run tests upon (you may run tests on multiple devices by using a comma separated list of device IDs)')
     parser.add_argument('--device-id', help='Specify to use a particular device')
-    
+
     parser.add_argument('--config-src', help='Path of additional configuration to add to test')
     parser.add_argument('--result-dir', help='Path to save downloaded results to')
     parser.add_argument('--action', help='Specific API to call (default: main)')
-    
+
     kwargs = {}
     args = parser.parse_args()
-    
+
     # (optional) when 'main' is the requested action
     # (required) when 'devices_config' is the requested action
     kwargs['device_id'] = args.device_id
-    
+
     # (required) access_token || api_key && api_secret
     # (optional) access_token_tag
     if args.access_token == None and (args.api_key == None or args.api_secret == None):
         parser.error('--access-token OR --api-key and --api-secret is required')
-    
+
     kwargs['api_key'] = args.api_key
     kwargs['api_secret'] = args.api_secret
     kwargs['access_token'] = args.access_token
     kwargs['access_token_tag'] = args.access_token_tag
-    
+
     # (optional)
     if args.action:
         if args.action in constants.SUPPORTED_ACTIONS:
@@ -331,58 +339,58 @@ def init():
             sys.exit(execute(args.action, kwargs, required))
         else:
             parser.error('"%s" action is not supported. Available options are: %s' % (args.action, ", ".join(constants.SUPPORTED_ACTIONS)))
-    
+
     # (required) app_id || app_src
     # (optional) app_test_type
     # (calculated) app_src_type
     if args.app_id is None and args.app_src is None and args.test_type not in constants.NO_APP_SOURCE:
         parser.error('--app-id OR --app-src is required')
-    
+
     kwargs['app_id'] = args.app_id
     kwargs['app_src'] = args.app_src
     kwargs['app_test_type'] = args.app_test_type
-    
+
     if args.app_src:
         if args.app_src[0:4] == 'http':
             kwargs['app_src_type'] = 'url'
         else:
-            try: 
+            try:
                 with open(args.app_src) as _: pass
                 kwargs['app_src_type'] = 'raw'
             except:
                 parser.error('--app-src %s could not be found' % args.app_src)
-    
+
     # (required) test_id || test_src && test_type
     if args.test_id == None and (args.test_src == None or args.test_type == None) and args.test_type not in constants.NO_TEST_SOURCE:
         parser.error('--test-id OR --test-src and --test-type is required')
-    
+
     kwargs['test_id'] = args.test_id
     kwargs['test_type'] = args.test_type
     kwargs['test_src'] = args.test_src
     if args.test_type not in constants.SUPPORTED_TEST_TYPES:
         parser.error('--test-type must be one of the following: %s' % ', '.join(constants.SUPPORTED_TEST_TYPES))
-    
+
     # (calculated) test_src_type
     if args.test_src:
         if args.test_src[0:4] == 'http':
             kwargs['test_src_type'] = 'url'
         else:
-            try: 
+            try:
                 with open(args.test_src) as _: pass
                 kwargs['test_src_type'] = 'raw'
             except:
                 parser.error('--test-src %s could not be found' % args.test_src)
-    
+
     # (optional) config_src
     if args.config_src != None:
         kwargs['config_src'] = args.config_src
-    
+
     # (required) device_type_id
     kwargs['device_type_id'] = args.device_type_id
-    
+
     # (optional) result_dir
     kwargs['result_dir'] = args.result_dir
-    
+
     sys.exit(main(**kwargs))
 
 if __name__ == '__main__':

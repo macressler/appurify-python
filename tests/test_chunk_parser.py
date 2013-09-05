@@ -3,10 +3,10 @@ from appurify.tunnel import ChunkParser
 from appurify.tunnel import CHUNK_PARSER_STATE_COMPLETE
 
 class TestChunkParser(unittest.TestCase):
-    
+
     def setUp(self):
         self.parser = ChunkParser()
-    
+
     def test_chunk_parse(self):
         self.parser.parse(''.join([
             '4\r\n',
