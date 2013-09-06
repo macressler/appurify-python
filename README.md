@@ -33,6 +33,10 @@ appurify-client.py --api-key $API_KEY --api-secret $API_SECRET \
 - `DEVICE_TYPE_IDS`: A comma separated list of numbers representing the device type IDs you wish to use for your test
 - `RESULT_DIR`: The directory on your local machine where you want your results to be written.
 
+### Jenkins Integration
+In Jenkins create a new Execute Shell build step and upload your app using the Python wrapper as pictured below.
+
+![Jenkins Integration](https://raw.github.com/appurify/appurify-python/master/jenkins.png)
 
 ### Contribution
 
