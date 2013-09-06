@@ -1,15 +1,39 @@
-Appurify Developer Python Client
---------------------------------
+# Appurify Python Client
 
-Environment variables:
-    
-    - APPURIFY_API_PROTO
-    - APPURIFY_API_HOST
-    - APPURIFY_API_PORT
-    
-    - APPURIFY_API_TIMEOUT
-    - APPURIFY_API_POLL_DELAY
-    
-    - APPURIFY_API_RETRY_ON_FAILURE
-    - APPURIFY_API_MAX_RETRY
-    - APPURIFY_API_RETRY_DELAY
+The official Python client for the [Appurify](http://www.appurify.com) API.
+
+### Installation
+
+```
+pip install appurify-0.1.10.tar.gz
+```
+
+This will install any missing dependencies and add two executable scripts to your bin folder:
+
+```
+$ appurify-client.py -h
+$ appurify-tunnel.py -h
+```
+
+### Running Tests
+
+```
+appurify-client.py --api-key $API_KEY --api-secret $API_SECRET \
+--app-src $APP-SRC --app-test-type $TEST_TYPE --test-src $TEST_SRC --test-type $TEST_TYPE \
+--device-type-id $DEVICE_TYPE_IDS --result-dir $RESULT_DIR
+```
+
+### Parameters
+
+- `API-KEY`: Used for authentication
+- `API-SECRET`: Used for authentication
+- `APP-SRC`: The path or URL to the app binary (.ipa or .apk)
+- `TEST_SRC`: The path or URL where the test files are located
+- `TEST_TYPE`: Your test framework name (i.e. calabash, ios_robot, ocunit, uiautomation)
+- `DEVICE_TYPE_IDS`: A comma separated list of numbers representing the device type IDs you wish to use for your test
+- `RESULT_DIR`: The directory on your local machine where you want your results to be written.
+
+
+### Contribution
+
+Found a bug or want to add a much needed feature?  Go for it and just send us the Pull Request!

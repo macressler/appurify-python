@@ -1,7 +1,7 @@
 """
     Copyright 2013 Appurify, Inc
     All rights reserved
-    
+
     Unless required by applicable law or agreed to in writing, software
     distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
     WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -24,7 +24,7 @@ setup(
     install_requires=open('requirements.txt', 'rb').read().strip().split(),
     entry_points={
         'console_scripts': [
-            'appurify-client.py = appurify.client:init', 
+            'appurify-client.py = appurify.client:init',
             'appurify-tunnel.py = appurify.tunnel:init'
         ]
     }

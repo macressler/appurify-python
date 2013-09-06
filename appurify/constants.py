@@ -11,14 +11,14 @@
 # Current development version
 # Increment this during development as and when desired
 # setup.py will use this version to generate new releases
-VERSION = (0, 1, 8)
+VERSION = (0, 1, 10)
 __version__ = '.'.join(map(str, VERSION[0:3])) + ''.join(VERSION[3:])
 
 # Last tagged stable version
 # Bump this to match VERSION when dev version is stable for new release
 # and also have passed Sencha architect tool integration tests
 # This variable is only used by REST API (/client/version/)
-STABLE_VERSION = (0, 1, 6)
+STABLE_VERSION = (0, 1, 9)
 __stable_version__ = '.'.join(map(str, STABLE_VERSION[0:3])) + ''.join(STABLE_VERSION[3:])
 
 __homepage__ = 'http://appurify.com'
@@ -38,9 +38,9 @@ API_MAX_RETRY = 3               # if retry is enabled, how many times should cli
 API_RETRY_DELAY = 1             # if retry is enabled, interval in sec between each retry (APPURIFY_API_RETRY_DELAY)
 
 SUPPORTED_TEST_TYPES = [
-    'calabash', 
-    'ocunit', 
-    'uiautomation', 
+    'calabash',
+    'ocunit',
+    'uiautomation',
     'robotium',
     'ios_robot',
     'android_uiautomator',
@@ -52,7 +52,8 @@ SUPPORTED_TEST_TYPES = [
     'android_selenium',
     'ios_webrobot',
     'appium',
-    'browser_test'
+    'browser_test',
+    'appurify_recording'
 ]
 
 NO_TEST_SOURCE = ['ios_robot', 'ios_webrobot', 'browser_test', 'kif:google']

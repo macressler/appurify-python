@@ -1,4 +1,4 @@
-.PHONY: clean package test tox
+.PHONY: all clean package test tox
 
 all: clean test
 
