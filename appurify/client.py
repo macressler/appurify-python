@@ -70,11 +70,12 @@ def devices_config_networks_list(access_token):
 def apps_list(access_token):
     return get('apps/list', {'access_token':access_token})
 
-def apps_upload(access_token, source, source_type, type=None):
+def apps_upload(access_token, source, source_type, type=None, name=None):
     files = None if source_type == 'url' else {'source':source}
     data = {'access_token':access_token, 'source_type':source_type}
     if source_type == 'url': data['source'] = source
     if type: data['app_test_type'] = type
+    if name: data['name'] = name
     return post('apps/upload', data, files)
 
 ############
@@ -160,84 +161,105 @@ def download_multi_test_response(test_response, result_dir):
 ## Command line utilities
 ##########################
 
-def main(api_key=None, api_secret=None, access_token=None, access_token_tag=None,
-         app_src=None, app_src_type=None, app_id=None, app_test_type=None,
-         test_src=None, test_src_type=None, test_id=None, test_type=None,
-         device_id=None, device_type_id=None, config_src=None, config_src_type=None,
-         result_dir=None):
-    all_pass = True
-    if not access_token:
-        log('generating access token...')
-        r = access_token_generate(api_key, api_secret, access_token_tag)
-        if r.status_code == 200:
-            access_token = r.json()['response']['access_token']
-            log('access_token_generate success, access_token:%s' % access_token)
-        else:
-            log('access_token_generate failed with response %s' % r.text)
-            return 1
+class AppurifyClientError(Exception):
+    pass
 
-    if not app_id:
+class AppurifyClient():
+
+    def __init__(self, *args, **kwargs):
+        self.args = kwargs
+        self.access_token = kwargs.get('access_token', None)
+        self.verbose = kwargs.get('verbose', False)
+
+    def refreshAccessToken(self):
+        if self.access_token is None:
+            api_key = self.args.get('api_key', None)
+            api_secret = self.args.get('api_secret',None)
+            if api_key is None or api_secret is None:
+                raise AppurifyClientError("Either access_token or api_key and api_secret are required parameters")
+            log('generating access token...')
+            r = access_token_generate(api_key, api_secret)
+            if r.status_code == 200:
+                access_token = r.json()['response']['access_token']
+                log('access_token_generate success, access_token:%s' % access_token)
+                self.access_token = access_token
+            else:
+                raise AppurifyClientError('access_token_generate failed with response %s' % r.text)
+        return self.access_token
+
+    def uploadApp(self, test_type):
         log('uploading app file...')
+        app_src_type = self.args.get('app_src_type', None)
+        app_src = self.args.get('app_src', None)
+        app_name = self.args.get('name', None)
         if app_src is None and test_type in constants.NO_APP_SOURCE:
-            r = apps_upload(access_token, None, 'url', app_test_type)
+            r = apps_upload(self.access_token, None, 'url', test_type)
         else:
-            app_file_source = open(app_src, 'rb') if app_src_type != 'url' else app_src
-            r = apps_upload(access_token, app_file_source, app_src_type, app_test_type)
-
+            if app_src is None:
+                raise AppurifyClientError("app src is required for test type %s" % test_type)
+            if app_src_type != 'url':
+                with open(app_src, 'rb') as app_file_source:
+                    r = apps_upload(self.access_token, app_file_source, app_src_type, app_src_type, app_name)
+            else:
+                r = apps_upload(self.access_token, app_src, app_src_type, app_src_type, app_name)
         if r.status_code == 200:
             app_id = r.json()['response']['app_id']
             log('apps_upload success, app_id:%s' % app_id)
+            return app_id
         else:
-            log('apps_upload failed with response %s' % r.text)
-            return 1
+            raise AppurifyClientError('apps_upload failed with response %s' % r.text)
 
-    if not test_id:
+    def uploadTest(self, test_type, app_id):
         log('uploading test file...')
+        test_src_type = self.args.get('test_src_type', None)
+        test_src = self.args.get('test_src', None)
         if not test_src and test_type not in constants.NO_TEST_SOURCE:
-            log('test_type %s requires a test source' % test_type)
-            return 1
-        if not app_id:
-            app_id = None
+            raise AppurifyClientError('test_type %s requires a test source' % test_type)
         if test_src:
-            test_file_source = open(test_src, 'rb') if test_src_type != 'url' else test_src
-            r = tests_upload(access_token, test_file_source, test_src_type, test_type, app_id=app_id)
+            if test_src_type != 'url':
+                with open(test_src, 'rb') as test_file_source:
+                    r = tests_upload(self.access_token, test_file_source, test_src_type, test_type, app_id=app_id)
+            else:
+                r = tests_upload(self.access_token, test_src, test_src_type, test_type, app_id=app_id)
         elif test_type in constants.NO_TEST_SOURCE:
-            r = tests_upload(access_token, None, 'url', test_type)
-
+            r = tests_upload(self.access_token, None, 'url', test_type)
         if r.status_code == 200:
             test_id = r.json()['response']['test_id']
             log('tests_upload success, test_id:%s' % test_id)
+            return test_id
         else:
-            log('tests_upload failed with response %s' % r.text)
-            return 1
+            raise AppurifyClientError('tests_upload failed with response %s' % r.text)
 
-    if test_id and config_src:
+    def uploadConfig(self, test_id, config_src):
         log('uploading config file...')
-        config_src = open(config_src, 'rb')
-        r = config_upload(access_token, config_src, test_id)
+        with open(config_src, 'rb') as config_src_file:
+            r = config_upload(self.access_token, config_src_file, test_id)
+            if r.status_code == 200:
+                log('config file upload success, test_id:%s' % test_id)
+                print repr(r.text)
+                config_id = r.json()['response']['config_id']
+                return config_id
+            else:
+                raise AppurifyClientError('config file upload  failed with response %s' % r.text)
+
+    def run_test(self, device_type_id, app_id, test_id, device_id):
+        log('running test...')
+        r = tests_run(self.access_token, device_type_id, app_id, test_id, device_id)
         if r.status_code == 200:
-            log('config file upload success, test_id:%s' % test_id)
+            test_response = r.json()['response']
+            test_run_id = test_response['test_run_id']
+            log('tests_run success scheduling test test_run_id:%s' % test_run_id)
+            return test_run_id
         else:
-            log('config file upload  failed with response %s' % r.text)
-            return 1
+            raise AppurifyClientError('tests_run failed scheduling test with response %s' % r.text)
 
-    log('running test...')
-    r = tests_run(access_token, device_type_id, app_id, test_id, device_id)
-
-    log('polling until test completes...')
-    if r.status_code == 200:
-        test_response = r.json()['response']
-        test_run_id = test_response['test_run_id']
-        log('tests_run success scheduling test test_run_id:%s' % test_run_id)
-
+    def pollTestResult(self, test_run_id, timeout, poll_every, result_dir):
         test_status = None
         runtime = 0
-        timeout = int(os.environ.get('APPURIFY_API_TIMEOUT', constants.API_TIMEOUT_SEC))
-        poll_every = os.environ.get('APPURIFY_API_POLL_DELAY', constants.API_POLL_SEC)
 
         while test_status != 'complete' and runtime < timeout:
             time.sleep(poll_every)
-            r = tests_check_result(access_token, test_run_id)
+            r = tests_check_result(self.access_token, test_run_id)
             test_status_response = r.json()['response']
             test_status = test_status_response['status']
             if test_status == 'complete':
@@ -251,17 +273,20 @@ def main(api_key=None, api_secret=None, access_token=None, access_token_tag=None
                     log(test_status_response['message'])
             runtime = runtime + poll_every
 
+        return test_status_response
+
+    def reportTestResult(self, test_status_response):
+        test_response = test_status_response['results']
+        result_dir = self.args.get('result_dir', None)
         if 'complete_count' in test_status_response:
             print_multi_test_responses(test_response)
             if result_dir:
                 download_multi_test_response(test_response, result_dir)
-        elif runtime < timeout:
+        else:
             print_single_test_response(test_response)
             if result_dir:
                 result_url = test_response['url']
                 download_test_response(result_url, result_dir)
-        else:
-            log('test timed out')
 
         if 'pass' in test_status_response:
             all_pass = test_status_response['pass']
@@ -269,13 +294,42 @@ def main(api_key=None, api_secret=None, access_token=None, access_token_tag=None
             all_pass = test_response['pass']
         else:
             all_pass = False
-    else:
-        log('tests_run failed scheduling test with response %s' % r.text)
-        all_pass = False
+        return all_pass
 
-    exit_code = 0 if all_pass else 1
-    log('done with exit code %s' % exit_code)
-    return exit_code
+    def main(self):
+        """
+        Returns 0 if all tests run with no errors
+        Returns 1 otherwise
+        """
+        exit_code = 0
+        
+        try:
+            test_type = self.args.get('test_type' or None)
+            device_type_id = self.args.get('device_type_id', None)
+            device_id = self.args.get('device_id', None)
+            result_dir = self.args.get('result_dir', None)
+            
+            self.refreshAccessToken()
+            
+            if test_type is None:
+                raise AppurifyClientError("test_type is required")
+            app_id = self.args.get('app_id', None) or self.uploadApp(test_type)
+            test_id = self.args.get('test_id', None) or self.uploadTest(test_type, app_id)
+    
+            test_run_id = self.run_test( device_type_id, app_id, test_id, device_id)
+            
+            timeout = self.args.get('timeout_sec', None) or int(os.environ.get('APPURIFY_API_TIMEOUT', constants.API_TIMEOUT_SEC))
+            poll_every = self.args.get('poll_every', None) or os.environ.get('APPURIFY_API_POLL_DELAY', constants.API_POLL_SEC)
+            test_status_response = self.pollTestResult(test_run_id, timeout, poll_every, result_dir)
+            all_pass = self.reportTestResult(test_status_response)
+            if not all_pass:
+                exit_code = 1
+        except AppurifyClientError, e:
+            log(str(e))
+            exit_code = 1
+        
+        log('done with exit code %s' % exit_code)
+        return exit_code
 
 def execute(action, kwargs, required):
     """Execute a particular action and logs returned response"""
@@ -311,6 +365,7 @@ def init():
     parser.add_argument('--result-dir', help='Path to save downloaded results to')
     parser.add_argument('--action', help='Specific API to call (default: main)')
 
+    parser.add_argument('--app-name', help='Optional, the name of the app to display')
     kwargs = {}
     args = parser.parse_args()
 
@@ -390,8 +445,11 @@ def init():
 
     # (optional) result_dir
     kwargs['result_dir'] = args.result_dir
+    
+    client = AppurifyClient(**kwargs)
+    sys.exit(client.main())
 
-    sys.exit(main(**kwargs))
+    #sys.exit(main(**kwargs))
 
 if __name__ == '__main__':
     init()

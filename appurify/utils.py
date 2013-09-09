@@ -13,7 +13,6 @@ import sys
 import platform
 import requests
 import time
-import urllib
 import logging
 
 from . import constants
@@ -97,4 +96,5 @@ def post(resource, data, files=None, retry_count=0, retry=True): # pragma: no co
 
 def wget(url, path): # pragma: no cover
     """Download a file to specified path"""
-    urllib.urlretrieve(url, path)
+    with open(path, 'wb') as f:
+        f.write(requests.get(url).content)
