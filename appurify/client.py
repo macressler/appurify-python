@@ -449,7 +449,5 @@ def init():
     client = AppurifyClient(**kwargs)
     sys.exit(client.main())
 
-    #sys.exit(main(**kwargs))
-
 if __name__ == '__main__':
     init()
