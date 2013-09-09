@@ -169,7 +169,6 @@ class AppurifyClient():
     def __init__(self, *args, **kwargs):
         self.args = kwargs
         self.access_token = kwargs.get('access_token', None)
-        self.verbose = kwargs.get('verbose', False)
 
     def refreshAccessToken(self):
         if self.access_token is None:
