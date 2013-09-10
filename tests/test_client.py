@@ -22,12 +22,13 @@ class TestObject(object):
 
 def mockRequestObj(response_obj, status_code=200):
     r = TestObject()
+    r.headers = {'x-api-server-hostname': 'django-01'}
     r.text = json.dumps(response_obj)
     r.status_code = status_code
     r.json = lambda: response_obj
     return r
 
-def mockRequestPost(url, data, files, verify=False, headers={'User-Agent': 'MockAgent'}):
+def mockRequestPost(url, data, files=None, verify=False, headers={'User-Agent': 'MockAgent'}):
     if 'access_token/generate' in url:
         return mockRequestObj({"meta": {"code": 200}, "response": {"access_token": "test_access_token", "ttl": 86400}})
     if 'apps/upload' in url:
@@ -118,39 +119,39 @@ class TestUpload(unittest.TestCase):
 
     @mock.patch("requests.post", mockRequestPost)
     def testUploadAppNoSource(self):
-        client = AppurifyClient(access_token="authenticated")
-        app_id = client.uploadApp('ios_webrobot')
+        client = AppurifyClient(access_token="authenticated", test_type='ios_webrobot')
+        app_id = client.uploadApp()
         self.assertEqual(app_id, "test_app_id", "Should properly fetch web robot for app id")
 
     @mock.patch("requests.post", mockRequestPost)
     def testUploadAppSource(self):
-        client = AppurifyClient(access_token="authenticated", app_src=__file__, app_src_type='raw')
-        app_id = client.uploadApp('calabash')
+        client = AppurifyClient(access_token="authenticated", app_src=__file__, app_src_type='raw', test_type='calabash')
+        app_id = client.uploadApp()
         self.assertEqual(app_id, "test_app_id", "Should properly fetch web robot for app id")
 
     @mock.patch("requests.post", mockRequestPost)
     def testUploadAppNoSourceError(self):
-        client = AppurifyClient(access_token="authenticated", app_src_type='raw')
+        client = AppurifyClient(access_token="authenticated", app_src_type='raw', test_type='calabash')
         with self.assertRaises(AppurifyClientError):
-            client.uploadApp('calabash')
+            client.uploadApp()
 
     @mock.patch("requests.post", mockRequestPost)
     def testUploadTestNoSource(self):
-        client = AppurifyClient(access_token="authenticated")
-        app_id = client.uploadTest('ios_webrobot', 'test_app_id')
+        client = AppurifyClient(access_token="authenticated", test_type='ios_webrobot')
+        app_id = client.uploadTest('test_app_id')
         self.assertEqual(app_id, "test_test_id", "Should properly fetch web robot for app id")
 
     @mock.patch("requests.post", mockRequestPost)
     def testUploadTest(self):
         client = AppurifyClient(access_token="authenticated", test_src=__file__, test_type="uiautomation", test_src_type='raw')
-        test_id = client.uploadTest('uiautomation', 'test_app_id')
+        test_id = client.uploadTest('test_app_id')
         self.assertEqual(test_id, "test_test_id", "Should properly fetch web robot for app id")
 
     @mock.patch("requests.post", mockRequestPost)
     def testUploadTestNoSourceError(self):
-        client = AppurifyClient(access_token="authenticated")
+        client = AppurifyClient(access_token="authenticated", test_type='uiautomation')
         with self.assertRaises(AppurifyClientError):
-            app_id = client.uploadTest('uiautomation', 'test_app_id')
+            app_id = client.uploadTest('test_app_id')
 
     @mock.patch("requests.post", mockRequestPost)
     def testUploadConfig(self):
@@ -163,14 +164,14 @@ class TestRun(unittest.TestCase):
     @mock.patch("requests.post", mockRequestPost)
     def testRunTestSingle(self):
         client = AppurifyClient(access_token="authenticated")
-        test_run_id = client.run_test("58", "app_id", "test_test_id", None)
+        test_run_id = client.runTest("app_id", "test_test_id")
         self.assertEqual(test_run_id, "test_test_run_id", "Should get test_run_id when executing run")
 
     @mock.patch("requests.get", mockRequestGet)
     def testPollTestResult(self):
         mockRequestGet.count = 0
         client = AppurifyClient(access_token="authenticated")
-        test_status_response = client.pollTestResult("test_test_run_id", 2, 0.1, None)
+        test_status_response = client.pollTestResult("test_test_run_id")
         self.assertEqual(test_status_response['status'], "complete", "Should poll until complete")
 
     @mock.patch("requests.post", mockRequestPost)
