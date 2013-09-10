@@ -256,7 +256,7 @@ class AppurifyClient():
             log('tests_run success scheduling test test_run_id:%s' % test_run_id)
             return test_run_id
         else:
-            raise AppurifyClientError('tests_run failed scheduling test with response %s' % r.text)
+            raise AppurifyClientError('runTest failed scheduling test with response %s' % r.text)
 
     def pollTestResult(self, test_run_id):
         test_status = None
@@ -272,13 +272,15 @@ class AppurifyClient():
                 log("**** COMPLETE - JSON SUMMARY FOLLOWS ****")
                 log(json.dumps(test_response))
                 log("**** COMPLETE - JSON SUMMARY ENDS ****")
+                return test_status_response
             else:
                 log("%s sec elapsed(status: %s)" % (str(runtime), test_status))
                 if 'message' in test_status_response:
                     log(test_status_response['message'])
             runtime = runtime + self.poll_every
 
-        return test_status_response
+        raise AppurifyClientError("Test result poll timed out after %s seconds" % self.timeout)
+
 
     def reportTestResult(self, test_status_response):
         test_response = test_status_response['results']
@@ -354,7 +356,6 @@ def init():
     parser.add_argument('--access-token', help='Specify to use this access token instead of generating a new one')
 
     parser.add_argument('--app-src', help='Path or Url of app file to upload')
-    parser.add_argument('--app-test-type', help='Specify if app file belongs to a test type')
     parser.add_argument('--app-id', help='Specify to use previously uploaded app file')
 
     parser.add_argument('--test-src', help='Path or Url of test file to upload')
@@ -368,7 +369,7 @@ def init():
     parser.add_argument('--result-dir', help='Path to save downloaded results to')
     parser.add_argument('--action', help='Specific API to call (default: main)')
 
-    parser.add_argument('--app-name', help='Optional, the name of the app to display')
+    parser.add_argument('--name', help='Optional, the name of the app to display')
     kwargs = {}
     args = parser.parse_args()
 
@@ -448,7 +449,10 @@ def init():
 
     # (optional) result_dir
     kwargs['result_dir'] = args.result_dir
-    
+
+    # (optional) app name
+    kwargs['name'] = args.name
+
     client = AppurifyClient(**kwargs)
     sys.exit(client.main())
 

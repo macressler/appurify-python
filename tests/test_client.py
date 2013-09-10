@@ -67,7 +67,7 @@ def mockRequestPost(url, data, files=None, verify=False, headers={'User-Agent': 
 
 def mockRequestGet(url, params, verify=False, headers={'User-Agent': 'MockUserAgent'}):
     if 'tests/check' in url:
-        if mockRequestGet.count % 2 == 0:
+        if mockRequestGet.count <= 0:
             mockRequestGet.count = mockRequestGet.count + 1
             return mockRequestObj({"meta": {"code": 200}, 
                                    "response": {"status": "in-progress", 
@@ -125,7 +125,7 @@ class TestUpload(unittest.TestCase):
 
     @mock.patch("requests.post", mockRequestPost)
     def testUploadAppSource(self):
-        client = AppurifyClient(access_token="authenticated", app_src=__file__, app_src_type='raw', test_type='calabash')
+        client = AppurifyClient(access_token="authenticated", app_src=__file__, app_src_type='raw', test_type='calabash', name="test_name")
         app_id = client.uploadApp()
         self.assertEqual(app_id, "test_app_id", "Should properly fetch web robot for app id")
 
@@ -170,7 +170,7 @@ class TestRun(unittest.TestCase):
     @mock.patch("requests.get", mockRequestGet)
     def testPollTestResult(self):
         mockRequestGet.count = 0
-        client = AppurifyClient(access_token="authenticated")
+        client = AppurifyClient(access_token="authenticated", timeout_sec=2, poll_every=0.1)
         test_status_response = client.pollTestResult("test_test_run_id")
         self.assertEqual(test_status_response['status'], "complete", "Should poll until complete")
 
@@ -184,3 +184,9 @@ class TestRun(unittest.TestCase):
         result_code = client.main()
         self.assertEqual(result_code, 1, "Main should execute and return result code")
 
+    @mock.patch("requests.get", mockRequestGet)
+    def testPollTimeout(self):
+        mockRequestGet.count = -20
+        client = AppurifyClient(access_token="authenticated", timeout_sec=0.2, poll_every=0.1)
+        with self.assertRaises(AppurifyClientError):
+            client.pollTestResult("test_test_run_id")
