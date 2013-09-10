@@ -18,7 +18,7 @@ __version__ = '.'.join(map(str, VERSION[0:3])) + ''.join(VERSION[3:])
 # Bump this to match VERSION when dev version is stable for new release
 # and also have passed Sencha architect tool integration tests
 # This variable is only used by REST API (/client/version/)
-STABLE_VERSION = (0, 1, 9)
+STABLE_VERSION = (0, 1, 10)
 __stable_version__ = '.'.join(map(str, STABLE_VERSION[0:3])) + ''.join(STABLE_VERSION[3:])
 
 __homepage__ = 'http://appurify.com'
