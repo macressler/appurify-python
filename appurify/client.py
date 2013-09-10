@@ -168,15 +168,15 @@ class AppurifyClient():
 
     def __init__(self, *args, **kwargs):
         self.args = kwargs
-        
+
         self.access_token = self.args.get('access_token', None)
         self.timeout = self.args.get('timeout_sec', None) or int(os.environ.get('APPURIFY_API_TIMEOUT', constants.API_TIMEOUT_SEC))
         self.poll_every = self.args.get('poll_every', None) or os.environ.get('APPURIFY_API_POLL_DELAY', constants.API_POLL_SEC)
-        
+
         self.test_type = self.args.get('test_type' or None)
         self.device_type_id = self.args.get('device_type_id', None)
         self.device_id = self.args.get('device_id', None)
-    
+
     def refreshAccessToken(self):
         if self.access_token is None:
             api_key = self.args.get('api_key', None)
@@ -277,6 +277,7 @@ class AppurifyClient():
                 log("%s sec elapsed(status: %s)" % (str(runtime), test_status))
                 if 'message' in test_status_response:
                     log(test_status_response['message'])
+                log("Test progress: {}".format(test_status_response.get('detailed_status', 'status-unavailable'))
             runtime = runtime + self.poll_every
 
         raise AppurifyClientError("Test result poll timed out after %s seconds" % self.timeout)
@@ -309,30 +310,30 @@ class AppurifyClient():
         Returns 1 otherwise
         """
         exit_code = 0
-        
+
         try:
             self.refreshAccessToken()
-            
+
             if self.test_type is None:
                 raise AppurifyClientError("test_type is required")
-            
+
             # upload app/test of use passed id's
             app_id = self.args.get('app_id', None) or self.uploadApp()
             test_id = self.args.get('test_id', None) or self.uploadTest(app_id)
-            
+
             # start test run
             test_run_id = self.runTest(app_id, test_id)
-            
+
             # poll for results and print report
             test_status_response = self.pollTestResult(test_run_id)
             all_pass = self.reportTestResult(test_status_response)
-            
+
             if not all_pass:
                 exit_code = 1
         except AppurifyClientError, e:
             log(str(e))
             exit_code = 1
-        
+
         log('done with exit code %s' % exit_code)
         return exit_code
 
