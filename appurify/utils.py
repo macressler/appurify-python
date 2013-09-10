@@ -167,18 +167,14 @@ class AppurifyHttpClient(object):
         
         try:
             response = self.method(self.url, **self.kwargs())
-            exc = AppurifyHttpClientError('API failure with response %s, code %s' % (response.text, response.status_code))
             if self.is_api_response(response):
                 # received response from api backend
-                if response.status_code == 200:
-                    return response
-                else:
-                    log('Status code %s with data %s' % (response.status_code, response.text))
-                    return self.retry_or_raise(exc)
+                return response
             else:
-                # received response from lb
+                # received response from higher up the stack
                 log('Received unexpected response from API, waiting for service to resume...')
                 self.wait_for_api_service()
+                exc = AppurifyHttpClientError('API failure with response %s, code %s' % (response.text, response.status_code))
                 return self.retry_or_raise(exc)
         except requests.exceptions.ConnectionError as e:
             # either no internet connectivity / dns failures
