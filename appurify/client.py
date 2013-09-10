@@ -241,7 +241,7 @@ class AppurifyClient():
             else:
                 raise AppurifyClientError('config file upload  failed with response %s' % r.text)
 
-    def run_test(self, device_type_id, app_id, test_id, device_id):
+    def runTest(self, device_type_id, app_id, test_id, device_id):
         log('running test...')
         r = tests_run(self.access_token, device_type_id, app_id, test_id, device_id)
         if r.status_code == 200:
@@ -315,7 +315,7 @@ class AppurifyClient():
             app_id = self.args.get('app_id', None) or self.uploadApp(test_type)
             test_id = self.args.get('test_id', None) or self.uploadTest(test_type, app_id)
     
-            test_run_id = self.run_test( device_type_id, app_id, test_id, device_id)
+            test_run_id = self.runTest( device_type_id, app_id, test_id, device_id)
             
             timeout = self.args.get('timeout_sec', None) or int(os.environ.get('APPURIFY_API_TIMEOUT', constants.API_TIMEOUT_SEC))
             poll_every = self.args.get('poll_every', None) or os.environ.get('APPURIFY_API_POLL_DELAY', constants.API_POLL_SEC)
