@@ -57,11 +57,19 @@ class AppurifyHttpClient(object):
     
         Clients and Customers MUST not override this unless instructed by Appurify devs
         """
-        return '/'.join(['%s://%s:%s/resource' % (
-            os.environ.get('APPURIFY_API_PROTO', constants.API_PROTO),
-            os.environ.get('APPURIFY_API_HOST', constants.API_HOST),
-            os.environ.get('APPURIFY_API_PORT', str(constants.API_PORT))
-        ), resource]) + '/'
+        return '/'.join(['%s://%s:%s/resource' % (AppurifyHttpClient.proto(), AppurifyHttpClient.host(), AppurifyHttpClient.port()), resource]) + '/'
+    
+    @staticmethod
+    def proto():
+        return os.environ.get('APPURIFY_API_PROTO', constants.API_PROTO)
+    
+    @staticmethod
+    def host():
+        return os.environ.get('APPURIFY_API_HOST', constants.API_HOST)
+    
+    @staticmethod
+    def port():
+        return os.environ.get('APPURIFY_API_PORT', str(constants.API_PORT))
     
     @staticmethod
     def user_agent(): # pragma: no cover
@@ -93,22 +101,28 @@ class AppurifyHttpClient(object):
             '%s/%s' % (system, release)
         ])
     
-    @property
-    def retry_on_failure(self):
+    @staticmethod
+    def retry_on_failure():
         return int(os.environ.get('APPURIFY_API_RETRY_ON_FAILURE', constants.API_RETRY_ON_FAILURE))
     
-    @property
-    def max_retry(self):
+    @staticmethod
+    def max_retry():
         return int(os.environ.get('APPURIFY_API_MAX_RETRY', constants.API_MAX_RETRY))
     
-    @property
-    def retry_delay(self):
+    @staticmethod
+    def retry_delay():
         return int(os.environ.get('APPURIFY_API_RETRY_DELAY', constants.API_RETRY_DELAY))
     
     @staticmethod
     def api_status():
         """returns api service status from aws status page."""
-        return constants.API_STATUS_DOWN
+        url = '%s/%s.txt' % (constants.API_STATUS_BASE_URL, AppurifyHttpClient.host().split('.')[0])
+        print url
+        r = requests.get(url)
+        if r.status_code == 200:
+            return int(r.text.strip())
+        else:
+            return constants.API_STATUS_DOWN
     
     @staticmethod
     def wait_for_api_service():
@@ -153,29 +167,31 @@ class AppurifyHttpClient(object):
         
         try:
             response = self.method(self.url, **self.kwargs())
+            exc = AppurifyHttpClientError('API failure with response %s, code %s' % (response.text, response.status_code))
             if self.is_api_response(response):
                 # received response from api backend
                 if response.status_code == 200:
                     return response
+                else:
+                    log('Status code %s with data %s' % (response.status_code, response.text))
+                    return self.retry_or_raise(exc)
             else:
                 # received response from lb
                 log('Received unexpected response from API, waiting for service to resume...')
                 self.wait_for_api_service()
+                return self.retry_or_raise(exc)
         except requests.exceptions.ConnectionError as e:
             # either no internet connectivity / dns failures
             # or lb is not responding/down
-            response = None
             log('Connection to API server failed, waiting for service to resume...')
             self.wait_for_api_service()
-        
-        if self.retry_on_failure and self.retry_count <= self.max_retry:
+            return self.retry_or_raise(AppurifyHttpClientError('API failure with reason %s' % str(e)))
+    
+    def retry_or_raise(self, exc):
+        if self.retry_on_failure() and self.retry_count < self.max_retry():
             time.sleep(int(math.pow(2, self.retry_count)))
             return self.start()
-        
-        if response:
-            raise AppurifyHttpClientError('API failure with response %s, code %s' % (response.text, response.status_code))
-        else:
-            raise AppurifyHttpClientError('API failure with reason %s' % str(e))
+        raise exc
 
 def get(resource, params): # pragma: no cover
     """make a HTTP GET request on API endpoint"""

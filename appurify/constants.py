@@ -37,6 +37,7 @@ API_RETRY_ON_FAILURE = 1        # should client retry API calls in case of non-2
 API_RETRY_DELAY = 1             # (in seconds) if retry on failure is enabled, interval between each retry (APPURIFY_API_RETRY_DELAY)
 API_MAX_RETRY = 3               # if retry on failure is enabled, how many times should client retry (APPURIFY_API_MAX_RETRY)
 
+API_STATUS_BASE_URL = 'https://s3-us-west-1.amazonaws.com/appurify-api-status'
 API_STATUS_UP = 1               # aws status page says service is up
 API_STATUS_DOWN = 2             # service is down
 
