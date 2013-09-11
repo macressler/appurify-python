@@ -455,7 +455,7 @@ class Tunnel(object):
     @staticmethod
     def reserve_proxy_port():
         try:
-            r = post("tunnel/reserve", Tunnel.credentials, retry=False)
+            r = post("tunnel/reserve", Tunnel.credentials)
             if r.status_code == 200:
                 return r.json()['response']
             else:
@@ -475,7 +475,7 @@ class Tunnel(object):
         params['proxy_port'] = Tunnel.config['proxy_port']
 
         try:
-            r = post("tunnel/unreserve", params, retry=False)
+            r = post("tunnel/unreserve", params)
             if r.status_code == 200:
                 log("Successfully unreserved tunnel resource#%s ..." % Tunnel.config['proxy_port'])
             else:
