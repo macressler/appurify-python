@@ -57,10 +57,11 @@ SUPPORTED_TEST_TYPES = [
     'ios_webrobot',
     'appium',
     'browser_test',
-    'appurify_recording'
+    'appurify_recording',
+    'network_headers',
 ]
 
-NO_TEST_SOURCE = ['ios_robot', 'ios_webrobot', 'browser_test', 'kif:google']
+NO_TEST_SOURCE = ['ios_robot', 'ios_webrobot', 'browser_test', 'kif:google', 'network_headers']
 NO_APP_SOURCE = ['ios_selenium','android_selenium','ios_webrobot', 'browser_test']
 
 SUPPORTED_ACTIONS = [
