@@ -134,6 +134,165 @@ def mockRequestPost(url, data, files=None, verify=False, headers={'User-Agent': 
                                 }
                             })
 
+def mockRequestPostMulti(url, data, files=None, verify=False, headers={'User-Agent': 'MockAgent'}):
+    if 'tests/run' in url:
+        return mockRequestObj({
+            "meta": {
+                "code": 200
+            },
+            "response": {
+                "test_run_id": "test_test_run_id1,test_test_run_id2",
+                "test_id": "test_test_id",
+                "test_runs": [
+                    {
+                        "id": 16290,
+                        "test_type": "uiautomation",
+                        "device_type": {
+                            "device_type_id": 58,
+                            "name": "5_NR",
+                            "battery": False,
+                            "brand": "iPhone",
+                            "os_name": "iOS",
+                            "os_version": "6.1.2",
+                            "has_available_device": None,
+                            "carrier": None,
+                            "available_devices_count": None,
+                            "busy_devices_count": None,
+                            "all_devices_count": None,
+                            "is_rooted": False,
+                            "is_api": True,
+                            "is_manual": False
+                        },
+                        "request_time": "2013-09-12T22:01:48.594Z",
+                        "start_time": None,
+                        "end_time": None,
+                        "all_pass": False,
+                        "run_id": "test_test_run_id1",
+                        "nbr_pass": None,
+                        "nbr_fail": None,
+                        "queued": True,
+                        "app": 17975,
+                        "version": {
+                            "id": 17975,
+                            "app": 7735,
+                            "uploaded_on": "2013-09-12T21:59:07Z",
+                            "description": None,
+                            "size": 197072,
+                            "icon_url": "/api/app/icon/?app_id=4858befdd9304984a171837c612746eb",
+                            "app_id": "test_app_id",
+                            "app_type": "ios",
+                            "web_app_url": None
+                        },
+                        "app_name": "use-bdd",
+                        "device": "58 - iPhone 5_NR / iOS 6.1.2",
+                        "source": 16185,
+                        "config": {
+                            "id": 1971,
+                            "device": {
+                                "id": 123,
+                                "profiler": True,
+                                "videocapture": True,
+                                "import_photos": False,
+                                "import_contacts": False,
+                                "latitude": "37.777363",
+                                "longitude": "-122.395894",
+                                "packet_capture": True,
+                                "free_memory": None,
+                                "orientation": None,
+                                "network": None
+                            },
+                            "framework": "{\"uiautomation\": {\"template\": \"Memory_Profiling_Template\"}}",
+                            "test_timeout": 240,
+                            "debug": False,
+                            "keep_vm": False,
+                            "device_types": [],
+                            "vm_size": "small",
+                            "raw": "[uiautomation]\ntemplate=Memory_Profiling_Template\n\n[appurify]\nprofiler=1\npcap=1\nlatlng=37.777363,-122.395894\n\n"
+                        },
+                        "status": "queueing",
+                        "test_id": "test_test_id",
+                        "app_id": "test_app_id",
+                        "test_run_id": "test_test_run_id1",
+                        "device_type_id": 58
+                    },
+                    {
+                        "id": 16291,
+                        "test_type": "uiautomation",
+                        "device_type": {
+                            "device_type_id": 61,
+                            "name": "5_NR",
+                            "battery": False,
+                            "brand": "iPhone",
+                            "os_name": "iOS",
+                            "os_version": "6.0.2",
+                            "has_available_device": None,
+                            "carrier": None,
+                            "available_devices_count": None,
+                            "busy_devices_count": None,
+                            "all_devices_count": None,
+                            "is_rooted": False,
+                            "is_api": True,
+                            "is_manual": False
+                        },
+                        "request_time": "2013-09-12T22:01:48.614Z",
+                        "start_time": None,
+                        "end_time": None,
+                        "all_pass": False,
+                        "run_id": "test_test_run_id2",
+                        "nbr_pass": None,
+                        "nbr_fail": None,
+                        "queued": True,
+                        "app": 17975,
+                        "version": {
+                            "id": 17975,
+                            "app": 7735,
+                            "uploaded_on": "2013-09-12T21:59:07Z",
+                            "description": None,
+                            "size": 197072,
+                            "icon_url": "/api/app/icon/?app_id=4858befdd9304984a171837c612746eb",
+                            "app_id": "test_app_id",
+                            "app_type": "ios",
+                            "web_app_url": None
+                        },
+                        "app_name": "use-bdd",
+                        "device": "61 - iPhone 5_NR / iOS 6.0.2",
+                        "source": 16185,
+                        "config": {
+                            "id": 1971,
+                            "device": {
+                                "id": 234,
+                                "profiler": True,
+                                "videocapture": True,
+                                "import_photos": False,
+                                "import_contacts": False,
+                                "latitude": "37.777363",
+                                "longitude": "-122.395894",
+                                "packet_capture": True,
+                                "free_memory": None,
+                                "orientation": None,
+                                "network": None
+                            },
+                            "framework": "{\"uiautomation\": {\"template\": \"Memory_Profiling_Template\"}}",
+                            "test_timeout": 240,
+                            "debug": False,
+                            "keep_vm": False,
+                            "device_types": [],
+                            "vm_size": "small",
+                            "raw": "[uiautomation]\ntemplate=Memory_Profiling_Template\n\n[appurify]\nprofiler=1\npcap=1\nlatlng=37.777363,-122.395894\n\n"
+                        },
+                        "status": "queueing",
+                        "test_id": "test_test_id",
+                        "app_id": "test_app_id",
+                        "test_run_id": "test_test_run_id2",
+                        "device_type_id": 61
+                    }
+                ],
+                "app_id": "test_app_id"
+            }
+        })
+    else:
+        raise Exception("Unrecognized url")
+
 def mockRequestGet(url, params, verify=False, headers={'User-Agent': 'MockUserAgent'}):
     if 'tests/check' in url:
         if mockRequestGet.count <= 0:
@@ -254,6 +413,14 @@ class TestRun(unittest.TestCase):
         test_run_id, configs = client.runTest("app_id", "test_test_id")
         self.assertEqual(test_run_id, "test_test_run_id", "Should get test_run_id when executing run")
         self.assertEqual(len(configs), 1, "Should get config back for test run")
+        self.assertEqual(configs[0]['device']['id'], 123, "Sanity check parameters")
+
+    @mock.patch("requests.post", mockRequestPostMulti)
+    def testRunTestMulti(self):
+        client = AppurifyClient(access_token="authenticated")
+        test_run_id, configs = client.runTest("app_id", "test_test_id")
+        self.assertEqual(test_run_id, "test_test_run_id1,test_test_run_id2", "Should get test_run_ids when executing run")
+        self.assertEqual(len(configs), 2, "Should get config back for test run")
         self.assertEqual(configs[0]['device']['id'], 123, "Sanity check parameters")
 
     @mock.patch("requests.get", mockRequestGet)
