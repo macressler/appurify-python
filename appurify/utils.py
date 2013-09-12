@@ -156,7 +156,7 @@ class AppurifyHttpClient(object):
         kwargs['headers'] = self.headers
         kwargs['verify'] = False
         
-        if self.method == 'post':
+        if self.files:
             kwargs['files'] = self.files
         
         return kwargs

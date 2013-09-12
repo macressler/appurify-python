@@ -248,15 +248,28 @@ class AppurifyClient():
                 raise AppurifyClientError('config file upload  failed with response %s' % r.text)
 
     def runTest(self, app_id, test_id):
-        log('running test...')
         r = tests_run(self.access_token, self.device_type_id, app_id, test_id, self.device_id)
         if r.status_code == 200:
             test_response = r.json()['response']
             test_run_id = test_response['test_run_id']
             log('tests_run success scheduling test test_run_id:%s' % test_run_id)
-            return test_run_id
+            try:
+                configs = [test_response['config']]
+            except:
+                try:
+                    configs = test_response['test_runs'].map(lambda x: x['config'])
+                except:
+                    configs = []
+            return (test_run_id, configs)
         else:
             raise AppurifyClientError('runTest failed scheduling test with response %s' % r.text)
+
+    def printConfigs(self, configs):
+        if configs:
+            print "== Test will run with the following device configurations =="
+            for config in configs:
+                print json.dumps(config, sort_keys=True,indent=4, separators=(',', ': '))
+            print "== End device configurations =="
 
     def pollTestResult(self, test_run_id):
         test_status = None
@@ -277,7 +290,7 @@ class AppurifyClient():
                 log("%s sec elapsed(status: %s)" % (str(runtime), test_status))
                 if 'message' in test_status_response:
                     log(test_status_response['message'])
-                log("Test progress: {}".format(test_status_response.get('detailed_status', 'status-unavailable'))
+                log("Test progress: {}".format(test_status_response.get('detailed_status', 'status-unavailable')))
             runtime = runtime + self.poll_every
 
         raise AppurifyClientError("Test result poll timed out after %s seconds" % self.timeout)
@@ -320,9 +333,12 @@ class AppurifyClient():
             # upload app/test of use passed id's
             app_id = self.args.get('app_id', None) or self.uploadApp()
             test_id = self.args.get('test_id', None) or self.uploadTest(app_id)
-
+            config_src = self.args.get('config_src', False)
+            if config_src:
+                self.uploadConfig(test_id, config_src)
             # start test run
-            test_run_id = self.runTest(app_id, test_id)
+            test_run_id, configs = self.runTest(app_id, test_id)
+            self.printConfigs(configs)
 
             # poll for results and print report
             test_status_response = self.pollTestResult(test_run_id)
@@ -371,6 +387,7 @@ def init():
     parser.add_argument('--action', help='Specific API to call (default: main)')
 
     parser.add_argument('--name', help='Optional, the name of the app to display')
+    
     kwargs = {}
     args = parser.parse_args()
 
@@ -408,7 +425,6 @@ def init():
 
     kwargs['app_id'] = args.app_id
     kwargs['app_src'] = args.app_src
-    kwargs['app_test_type'] = args.app_test_type
 
     if args.app_src:
         if args.app_src[0:4] == 'http':

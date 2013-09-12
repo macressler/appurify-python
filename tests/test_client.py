@@ -59,11 +59,80 @@ def mockRequestPost(url, data, files=None, verify=False, headers={'User-Agent': 
                                             "config_id": 23456, 
                                             "conf_file": "appurify.conf"}})
     if 'tests/run' in url:
-        return mockRequestObj({"meta": {"code": 200}, 
-                               "response": {"test_run_id": "test_test_run_id", 
-                                            "test_id": "test_test_id", 
-                                            "app_id": "test_app_id", 
-                                            "request_time": "2013-09-09 22:39:19.186788+00:00"}})
+        return mockRequestObj({
+                                "meta": {
+                                    "code": 200
+                                },
+                                "response": {
+                                    "id": 16282,
+                                    "test_type": "uiautomation",
+                                    "device_type": {
+                                        "device_type_id": 58,
+                                        "name": "5_NR",
+                                        "battery": False,
+                                        "brand": "iPhone",
+                                        "os_name": "iOS",
+                                        "os_version": "6.1.2",
+                                        "has_available_device": None,
+                                        "carrier": None,
+                                        "available_devices_count": None,
+                                        "busy_devices_count": None,
+                                        "all_devices_count": None,
+                                        "is_rooted": False,
+                                        "is_api": True,
+                                        "is_manual": False
+                                    },
+                                    "request_time": "2013-09-11T22:35:18.724Z",
+                                    "start_time": None,
+                                    "end_time": None,
+                                    "all_pass": False,
+                                    "run_id": "test_test_run_id",
+                                    "nbr_pass": None,
+                                    "nbr_fail": None,
+                                    "queued": True,
+                                    "app": 17967,
+                                    "version": {
+                                        "id": 17967,
+                                        "app": 7735,
+                                        "uploaded_on": "2013-09-11T22:35:18Z",
+                                        "description": None,
+                                        "size": 197072,
+                                        "icon_url": "/api/app/icon/?app_id=c5f361ebed16488dbf6b69be54f03e2c",
+                                        "app_id": "c5f361ebed16488dbf6b69be54f03e2c",
+                                        "app_type": "ios",
+                                        "web_app_url": None
+                                    },
+                                    "app_name": "use-bdd",
+                                    "device": "58 - iPhone 5_NR / iOS 6.1.2",
+                                    "source": 16177,
+                                    "config": {
+                                        "id": 1963,
+                                        "device": {
+                                            "id": 123,
+                                            "profiler": True,
+                                            "videocapture": True,
+                                            "import_photos": False,
+                                            "import_contacts": False,
+                                            "latitude": "37.777363",
+                                            "longitude": "-122.395894",
+                                            "packet_capture": True,
+                                            "free_memory": None,
+                                            "orientation": None,
+                                            "network": None
+                                        },
+                                        "framework": "{\"uiautomation\": {\"template\": \"Memory_Profiling_Template\"}}",
+                                        "test_timeout": 240,
+                                        "debug": False,
+                                        "keep_vm": False,
+                                        "device_types": [],
+                                        "vm_size": "small"
+                                    },
+                                    "status": "queueing",
+                                    "test_id": "test_test_id",
+                                    "app_id": "test_app_id",
+                                    "test_run_id": "test_test_run_id"
+                                }
+                            })
 
 def mockRequestGet(url, params, verify=False, headers={'User-Agent': 'MockUserAgent'}):
     if 'tests/check' in url:
@@ -159,13 +228,33 @@ class TestUpload(unittest.TestCase):
         config_id = client.uploadConfig("test_id", config_src=__file__)
         self.assertEqual(config_id, 23456, "Should properly fetch uploaded config id")
 
+    def testPrintConfig(self):
+        client = AppurifyClient(access_token="authenticated", test_type="ios_webrobot")
+        config = [{
+                                        "id": 1963,
+                                        "device": {
+                                            "id": 123,
+                                            "profiler": True,
+                                            "videocapture": True,
+                                        },
+                                        "framework": "{\"uiautomation\": {\"template\": \"Memory_Profiling_Template\"}}",
+                                        "test_timeout": 240,
+                                        "debug": False,
+                                        "keep_vm": False,
+                                        "device_types": [],
+                                        "vm_size": "small"
+                    }]
+        client.printConfigs(config)
+
 class TestRun(unittest.TestCase):
 
     @mock.patch("requests.post", mockRequestPost)
     def testRunTestSingle(self):
         client = AppurifyClient(access_token="authenticated")
-        test_run_id = client.runTest("app_id", "test_test_id")
+        test_run_id, configs = client.runTest("app_id", "test_test_id")
         self.assertEqual(test_run_id, "test_test_run_id", "Should get test_run_id when executing run")
+        self.assertEqual(len(configs), 1, "Should get config back for test run")
+        self.assertEqual(configs[0]['device']['id'], 123, "Sanity check parameters")
 
     @mock.patch("requests.get", mockRequestGet)
     def testPollTestResult(self):
