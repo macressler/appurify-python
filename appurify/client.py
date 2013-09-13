@@ -253,11 +253,12 @@ class AppurifyClient():
             test_response = r.json()['response']
             test_run_id = test_response['test_run_id']
             log('tests_run success scheduling test test_run_id:%s' % test_run_id)
+            
             try:
                 configs = [test_response['config']]
             except:
                 try:
-                    configs = test_response['test_runs'].map(lambda x: x['config'])
+                    configs = map(lambda x: x['config'], test_response['test_runs'])
                 except:
                     configs = []
             return (test_run_id, configs)
