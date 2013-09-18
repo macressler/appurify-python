@@ -267,9 +267,14 @@ class AppurifyClient():
 
     def printConfigs(self, configs):
         if configs:
+            found_config = False
             print "== Test will run with the following device configurations =="
             for config in configs:
-                print json.dumps(config, sort_keys=True,indent=4, separators=(',', ': '))
+                if config:
+                    found_config = True
+                    print json.dumps(config, sort_keys=True,indent=4, separators=(',', ': '))
+            if not found_config:
+                print "Default"
             print "== End device configurations =="
 
     def pollTestResult(self, test_run_id):
