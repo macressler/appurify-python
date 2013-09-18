@@ -199,7 +199,7 @@ class AppurifyClient():
         app_src = self.args.get('app_src', None)
         app_name = self.args.get('name', None)
         if app_src is None and self.test_type in constants.NO_APP_SOURCE:
-            r = apps_upload(self.access_token, None, 'url', self.test_type)
+            r = apps_upload(self.access_token, None, 'url', self.test_type, name=app_name)
         else:
             if app_src is None:
                 raise AppurifyClientError("app src is required for test type %s" % self.test_type)
