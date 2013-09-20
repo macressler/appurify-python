@@ -253,7 +253,7 @@ class AppurifyClient():
             test_response = r.json()['response']
             test_run_id = test_response['test_run_id']
             log('tests_run success scheduling test test_run_id:%s' % test_run_id)
-            
+
             try:
                 configs = [test_response['config']]
             except:
@@ -293,7 +293,7 @@ class AppurifyClient():
                 log("**** COMPLETE - JSON SUMMARY ENDS ****")
                 return test_status_response
             else:
-                log("%s sec elapsed(status: %s)" % (str(runtime), test_status))
+                log("%s sec elapsed" % str(runtime))
                 if 'message' in test_status_response:
                     log(test_status_response['message'])
                 log("Test progress: {}".format(test_status_response.get('detailed_status', 'status-unavailable')))
@@ -393,7 +393,7 @@ def init():
     parser.add_argument('--action', help='Specific API to call (default: main)')
 
     parser.add_argument('--name', help='Optional, the name of the app to display')
-    
+
     kwargs = {}
     args = parser.parse_args()
 
