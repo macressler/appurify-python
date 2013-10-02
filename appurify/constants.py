@@ -62,7 +62,7 @@ SUPPORTED_TEST_TYPES = [
 ]
 
 NO_TEST_SOURCE = ['ios_robot', 'ios_webrobot', 'browser_test', 'kif:google', 'network_headers']
-NO_APP_SOURCE = ['ios_selenium','android_selenium','ios_webrobot', 'browser_test']
+NO_APP_SOURCE = ['ios_selenium','android_selenium','ios_webrobot', 'browser_test', 'network_headers']
 
 SUPPORTED_ACTIONS = [
     'access_token_generate',
