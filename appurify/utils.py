@@ -202,4 +202,4 @@ def post(resource, data, files=None): # pragma: no cover
 def wget(url, path): # pragma: no cover
     """Download a file to specified path"""
     with open(path, 'wb') as f:
-        f.write(requests.get(url).content)
+        f.write(requests.get(url, verify=False).content)

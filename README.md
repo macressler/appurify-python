@@ -41,3 +41,14 @@ In Jenkins create a new Execute Shell build step and upload your app using the P
 ### Contribution
 
 Found a bug or want to add a much needed feature?  Go for it and just send us the Pull Request!
+
+## Release Notes
+
+### 0.2.1
+
+- ```network_headers``` test type no longer requires app source
+- Fixed an issue where test results were not properly downloaded despite setting the ```result-dir``` parameter.
+- Test source is now optional for ```kif``` test type
+- Improved test status information when polling a running test
+- Configuration values are now printed when running a test
+- Fixed a bug where ``name``` parameter was not respected for web apps
