@@ -115,8 +115,7 @@ def config_upload(access_token, source, test_id):
 def print_single_test_response(test_response):
     try:
         for response_type in ['output', 'errors', 'exception', 'number_passes', 'number_fails']:
-            response_text = test_response[response_type]
-            if response_text is "": response_text = None
+            response_text = test_response[response_type] or None
             log("Test %s: %s" % (response_type, response_text))
 
         response_pass = test_response['pass']
