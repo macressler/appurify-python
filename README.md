@@ -44,6 +44,11 @@ Found a bug or want to add a much needed feature?  Go for it and just send us th
 
 ## Release Notes
 
+
+### 0.2.2
+
+- Added ```ios_sencharobot``` test type 
+
 ### 0.2.1
 
 - ```network_headers``` test type no longer requires app source
