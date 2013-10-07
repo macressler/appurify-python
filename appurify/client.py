@@ -314,7 +314,6 @@ class AppurifyClient():
             if result_dir:
                 result_url = test_response['url']
                 download_test_response(result_url, result_dir)
-
         if 'pass' in test_status_response:
             all_pass = test_status_response['pass']
         elif 'pass' in test_response:
