@@ -326,7 +326,8 @@ class AppurifyClient():
     def main(self):
         """
         Returns 0 if all tests run with no errors
-        Returns 1 otherwise
+        Returns -1 if there were test errors
+        Returns 1 if tests failed because of a script or server fault
         """
         exit_code = 0
 
@@ -351,8 +352,8 @@ class AppurifyClient():
             all_pass = self.reportTestResult(test_status_response)
 
             if not all_pass:
-                exit_code = 1
-        except AppurifyClientError, e:
+                exit_code = -1
+        except Exception, e:
             log(str(e))
             exit_code = 1
 
