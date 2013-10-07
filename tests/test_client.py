@@ -311,14 +311,17 @@ def mockRequestGet(url, params, verify=False, headers={'User-Agent': 'MockUserAg
                                                 "results": {"exception": None, 
                                                             "errors": "", 
                                                             "url": "http://localhost/resource/tests/result/?run_id=dummy_test_run_id", 
-                                                            "number_passes": 1, 
-                                                            "number_fails": 1, 
-                                                            "pass": False, 
+                                                            "number_passes": mockRequestGet.passes,
+                                                            "number_fails": mockRequestGet.fails,
+                                                            "pass": mockRequestGet.pass_val, 
                                                             "output": "test_run_output"}, 
                                                 "test_run_id": "test_test_run_id", 
                                                 "device_type": "58 - iPhone 5_NR / iOS 6.1.2", 
                                                 "device_type_id": 58}})
 mockRequestGet.count = 0
+mockRequestGet.passes = 1
+mockRequestGet.fails = 1
+mockRequestGet.pass_val = False
 
 class TestAuth(unittest.TestCase):
     def setUp(self):
@@ -432,13 +435,31 @@ class TestRun(unittest.TestCase):
 
     @mock.patch("requests.post", mockRequestPost)
     @mock.patch("requests.get", mockRequestGet)
-    def testMain(self):
+    def testMainFail(self):
+        mockRequestGet.count = 0
+        mockRequestGet.passes = 1
+        mockRequestGet.fails = 1
+        mockRequestGet.pass_val = False
         client = AppurifyClient(api_key="test_key", api_secret="test_secret", test_type="uiautomation", 
                                 app_src=__file__, app_src_type='raw', 
                                 test_src=__file__, test_src_type='raw',
                                 timeout_sec=2, poll_every=0.1)
         result_code = client.main()
-        self.assertEqual(result_code, 1, "Main should execute and return result code")
+        self.assertEqual(result_code, -1, "Main should execute and return fail code")
+
+    @mock.patch("requests.post", mockRequestPost)
+    @mock.patch("requests.get", mockRequestGet)
+    def testMainPass(self):
+        mockRequestGet.count = 0
+        mockRequestGet.passes = 2
+        mockRequestGet.fails = 0
+        mockRequestGet.pass_val = True
+        client = AppurifyClient(api_key="test_key", api_secret="test_secret", test_type="uiautomation", 
+                                app_src=__file__, app_src_type='raw', 
+                                test_src=__file__, test_src_type='raw',
+                                timeout_sec=2, poll_every=0.1)
+        result_code = client.main()
+        self.assertEqual(result_code, 0, "Main should execute and return pass code")
 
     @mock.patch("requests.get", mockRequestGet)
     def testPollTimeout(self):
@@ -446,3 +467,11 @@ class TestRun(unittest.TestCase):
         client = AppurifyClient(access_token="authenticated", timeout_sec=0.2, poll_every=0.1)
         with self.assertRaises(AppurifyClientError):
             client.pollTestResult("test_test_run_id")
+
+    @mock.patch("requests.post", mockRequestPost)
+    @mock.patch("requests.get", mockRequestGet)
+    def testPollTimeoutCode(self):
+        mockRequestGet.count = -20
+        client = AppurifyClient(access_token="authenticated", timeout_sec=0.2, poll_every=0.1)
+        result_code = client.main()
+        self.assertEqual(result_code, 1, "Main should execute and return error code")
