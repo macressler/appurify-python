@@ -199,7 +199,7 @@ def post(resource, data, files=None): # pragma: no cover
     client = AppurifyHttpClient('post', resource, data, files=files)
     return client.start()
 
-def wget(url, path): # pragma: no cover
+def wget(url, path, verify=True): # pragma: no cover
     """Download a file to specified path"""
     with open(path, 'wb') as f:
-        f.write(requests.get(url, verify=False).content)
+        f.write(requests.get(url, verify=verify).content)
