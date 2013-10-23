@@ -11,7 +11,7 @@
 # Current development version
 # Increment this during development as and when desired
 # setup.py will use this version to generate new releases
-VERSION = (0, 2, 2)
+VERSION = (0, 2, 3)
 __version__ = '.'.join(map(str, VERSION[0:3])) + ''.join(VERSION[3:])
 
 # Last tagged stable version
@@ -59,7 +59,8 @@ SUPPORTED_TEST_TYPES = [
     'browser_test',
     'appurify_recording',
     'network_headers',
-    'ios_sencharobot'
+    'ios_sencharobot',
+    'android_monkey',
 ]
 
 NO_TEST_SOURCE = ['ios_robot', 'ios_webrobot', 'browser_test', 'kif', 'kif:google', 'network_headers', 'ios_sencharobot']
