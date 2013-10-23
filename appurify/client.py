@@ -129,7 +129,7 @@ def print_single_test_response(test_response):
     except Exception as e:
         log("Error printing test results: %r" % e)
 
-def download_test_response(results_url, result_dir):
+def download_test_response(results_url, result_dir, verify=True):
     try:
         if not os.path.exists(result_dir):
             log("Attempting to create directory %s" % result_dir)
@@ -137,7 +137,7 @@ def download_test_response(results_url, result_dir):
         if result_dir:
             result_path = result_dir + '/' + 'results.zip'
             log("Saving results to %s" % result_path)
-            wget(results_url, result_path)
+            wget(results_url, result_path, verify)
     except Exception as e:
         log("Error downloading test result file: %s" % e)
 
@@ -147,13 +147,13 @@ def print_multi_test_responses(test_response):
         print_single_test_response(result["results"])
         log("\n")
 
-def download_multi_test_response(test_response, result_dir):
+def download_multi_test_response(test_response, result_dir, verify=True):
     for result in test_response:
         try:
             result_url = result['results']['url']
             device_type_id = result['device_type_id']
             device_result_path = result_dir + "/device_type_%s" % device_type_id
-            download_test_response(result_url, device_result_path)
+            download_test_response(result_url, device_result_path, verify)
         except Exception as e:
             log("Error downloading test response: %s" % e)
 
@@ -176,6 +176,11 @@ class AppurifyClient():
         self.test_type = self.args.get('test_type' or None)
         self.device_type_id = self.args.get('device_type_id', None)
         self.device_id = self.args.get('device_id', None)
+        disable_ssl_check = self.args.get('disable_ssl_check', False)
+        if disable_ssl_check:
+            self.verify_ssl = False
+        else:
+            self.verify_ssl = True
 
     def refreshAccessToken(self):
         if self.access_token is None:
@@ -308,13 +313,12 @@ class AppurifyClient():
         if 'complete_count' in test_status_response:
             print_multi_test_responses(test_response)
             if result_dir:
-                download_multi_test_response(test_response, result_dir)
+                download_multi_test_response(test_response, result_dir, self.verify_ssl)
         else:
             print_single_test_response(test_response)
             if result_dir:
                 result_url = test_response['url']
-                download_test_response(result_url, result_dir)
-
+                download_test_response(result_url, result_dir, self.verify_ssl)
         if 'pass' in test_status_response:
             all_pass = test_status_response['pass']
         elif 'pass' in test_response:
@@ -326,7 +330,8 @@ class AppurifyClient():
     def main(self):
         """
         Returns 0 if all tests run with no errors
-        Returns 1 otherwise
+        Returns -1 if there were test errors
+        Returns 1 if tests failed because of a script or server fault
         """
         exit_code = 0
 
@@ -351,8 +356,8 @@ class AppurifyClient():
             all_pass = self.reportTestResult(test_status_response)
 
             if not all_pass:
-                exit_code = 1
-        except AppurifyClientError, e:
+                exit_code = -1
+        except Exception, e:
             log(str(e))
             exit_code = 1
 
@@ -394,6 +399,8 @@ def init():
 
     parser.add_argument('--name', help='Optional, the name of the app to display')
 
+    parser.add_argument('--disable-ssl-check', help="Optional, if set, don't verify SSL certificates (ie if you're using self-signed certs)", action="store_true")
+
     kwargs = {}
     args = parser.parse_args()
 
@@ -410,6 +417,7 @@ def init():
     kwargs['api_secret'] = args.api_secret
     kwargs['access_token'] = args.access_token
     kwargs['access_token_tag'] = args.access_token_tag
+    kwargs['disable_ssl_check'] = args.disable_ssl_check
 
     # (optional)
     if args.action:
