@@ -76,4 +76,5 @@ SUPPORTED_ACTIONS = [
     'devices_config_list',
     'devices_config_networks_list',
     'tests_list',
+    'tests_check_result',
 ]

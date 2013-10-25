@@ -411,6 +411,7 @@ def init():
     parser.add_argument('--test-src', help='Path or Url of test file to upload')
     parser.add_argument('--test-type', help='Type of test being uploaded')
     parser.add_argument('--test-id', help='Specify to use previously uploaded test file')
+    parser.add_argument('--test-run-id', help='Specify test run id (required only while running tests_check_result action)')
 
     parser.add_argument('--device-type-id', help='Device type to reserve and run tests upon (you may run tests on multiple devices by using a comma separated list of device IDs)')
     parser.add_argument('--device-id', help='Specify to use a particular device')
@@ -435,6 +436,7 @@ def init():
     if args.access_token == None and (args.api_key == None or args.api_secret == None):
         parser.error('--access-token OR --api-key and --api-secret is required')
 
+    kwargs['test_run_id'] = args.test_run_id
     kwargs['api_key'] = args.api_key
     kwargs['api_secret'] = args.api_secret
     kwargs['access_token'] = args.access_token
