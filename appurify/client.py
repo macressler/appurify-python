@@ -99,6 +99,9 @@ def tests_run(access_token, device_type_id, app_id, test_id, device_id=None):
 def tests_check_result(access_token, test_run_id):
     return get('tests/check', {'access_token':access_token, 'test_run_id': test_run_id})
 
+def tests_abort(access_token, test_run_id):
+    return post('tests/abort', {'access_token':access_token, 'test_run_id': test_run_id})
+
 ###################
 ## Config file API
 ###################
@@ -270,6 +273,18 @@ class AppurifyClient():
         else:
             raise AppurifyClientError('runTest failed scheduling test with response %s' % r.text)
 
+    def abortTest(self, test_run_id):
+        r = tests_abort(self.access_token, test_run_id)
+        if r.status_code == 200:
+            response = r.json()['response']
+            if response['status'] == 'aborting':
+                log("aborting test run id %s" % test_run_id)
+            elif response['status'] == 'complete':
+                log("test run id %s is complete" % test_run_id)
+            return True
+        else:
+            False
+
     def printConfigs(self, configs):
         if configs:
             found_config = False
@@ -344,19 +359,25 @@ class AppurifyClient():
             # upload app/test of use passed id's
             app_id = self.args.get('app_id', None) or self.uploadApp()
             test_id = self.args.get('test_id', None) or self.uploadTest(app_id)
+            
             config_src = self.args.get('config_src', False)
             if config_src:
                 self.uploadConfig(test_id, config_src)
+            
             # start test run
             test_run_id, configs = self.runTest(app_id, test_id)
             self.printConfigs(configs)
-
+            
             # poll for results and print report
             test_status_response = self.pollTestResult(test_run_id)
             all_pass = self.reportTestResult(test_status_response)
-
+            
             if not all_pass:
                 exit_code = -1
+        except KeyboardInterrupt, e:
+            response = self.abortTest(test_run_id)
+            log(str(e))
+            exit_code = 1
         except Exception, e:
             log(str(e))
             exit_code = 1
