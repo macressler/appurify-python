@@ -99,8 +99,8 @@ def tests_run(access_token, device_type_id, app_id, test_id, device_id=None):
 def tests_check_result(access_token, test_run_id):
     return get('tests/check', {'access_token':access_token, 'test_run_id': test_run_id})
 
-def tests_abort(access_token, test_run_id):
-    return post('tests/abort', {'access_token':access_token, 'test_run_id': test_run_id})
+def tests_abort(access_token, test_run_id, reason='Not specified.'):
+    return post('tests/abort', {'access_token':access_token, 'test_run_id': test_run_id, 'reason':reason})
 
 ###################
 ## Config file API
@@ -273,8 +273,8 @@ class AppurifyClient():
         else:
             raise AppurifyClientError('runTest failed scheduling test with response %s' % r.text)
 
-    def abortTest(self, test_run_id):
-        r = tests_abort(self.access_token, test_run_id)
+    def abortTest(self, test_run_id, reason):
+        r = tests_abort(self.access_token, test_run_id, reason)
         if r.status_code == 200:
             response = r.json()['response']
             if response['status'] == 'aborting':
@@ -375,7 +375,7 @@ class AppurifyClient():
             if not all_pass:
                 exit_code = -1
         except KeyboardInterrupt, e:
-            response = self.abortTest(test_run_id)
+            response = self.abortTest(test_run_id, repr(e))
             log(str(e))
             exit_code = 1
         except Exception, e:
