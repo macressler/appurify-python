@@ -119,7 +119,7 @@ def print_single_test_response(test_response):
     try:
         for response_type in ['output', 'errors', 'exception', 'number_passes', 'number_fails']:
             response_text = test_response[response_type] or None
-            response_text = None if response_text.strip() == '' else resopnse_text
+            response_text = None if type(response_text) in ('unicode', 'str') and response_text.strip() == '' else response_text
             log("Test %s: %s" % (response_type, response_text))
 
         response_pass = test_response['pass']
