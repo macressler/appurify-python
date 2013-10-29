@@ -203,3 +203,4 @@ def wget(url, path, verify=True): # pragma: no cover
     """Download a file to specified path"""
     with open(path, 'wb') as f:
         f.write(requests.get(url, verify=verify).content)
+

@@ -16,6 +16,7 @@ import time
 import pprint
 import inspect
 
+from . import signals
 from . import constants
 from .utils import log, get, post, wget
 
@@ -98,6 +99,9 @@ def tests_run(access_token, device_type_id, app_id, test_id, device_id=None):
 
 def tests_check_result(access_token, test_run_id):
     return get('tests/check', {'access_token':access_token, 'test_run_id': test_run_id})
+
+def tests_abort(access_token, test_run_id):
+    return post('tests/abort', {'access_token':access_token, 'test_run_id': test_run_id})
 
 ###################
 ## Config file API
@@ -287,25 +291,35 @@ class AppurifyClient():
         runtime = 0
 
         while test_status != 'complete' and runtime < self.timeout:
-            time.sleep(self.poll_every)
-            r = tests_check_result(self.access_token, test_run_id)
-            test_status_response = r.json()['response']
-            test_status = test_status_response['status']
-            if test_status == 'complete':
-                test_response = test_status_response['results']
-                log("**** COMPLETE - JSON SUMMARY FOLLOWS ****")
-                log(json.dumps(test_response))
-                log("**** COMPLETE - JSON SUMMARY ENDS ****")
-                return test_status_response
-            else:
-                log("%s sec elapsed" % str(runtime))
-                if 'message' in test_status_response:
-                    log(test_status_response['message'])
-                log("Test progress: {}".format(test_status_response.get('detailed_status', 'status-unavailable')))
-            runtime = runtime + self.poll_every
+            try:
+                time.sleep(self.poll_every)
+                r = tests_check_result(self.access_token, test_run_id)
+                test_status_response = r.json()['response']
+                test_status = test_status_response['status']
+                if test_status == 'complete':
+                    test_response = test_status_response['results']
+                    log("**** COMPLETE - JSON SUMMARY FOLLOWS ****")
+                    log(json.dumps(test_response))
+                    log("**** COMPLETE - JSON SUMMARY ENDS ****")
+                    return test_status_response
+                else:
+                    log("%s sec elapsed" % str(runtime))
+                    if 'message' in test_status_response:
+                        log(test_status_response['message'])
+                    log("Test progress: {}".format(test_status_response.get('detailed_status', 'status-unavailable')))
+                runtime = runtime + self.poll_every
+            except signals.QuitException:
+                log("Quitting script")
+                raise
+            except signals.AbortException:
+                r = tests_abort(self.access_token, test_run_id)
+                log("Aborting test run...")
+                log(r.json()['response'])
+                raise
+            except signals.ContinueException:
+                pass
 
         raise AppurifyClientError("Test result poll timed out after %s seconds" % self.timeout)
-
 
     def reportTestResult(self, test_status_response):
         test_response = test_status_response['results']
