@@ -99,6 +99,9 @@ def tests_run(access_token, device_type_id, app_id, test_id, device_id=None):
 def tests_check_result(access_token, test_run_id):
     return get('tests/check', {'access_token':access_token, 'test_run_id': test_run_id})
 
+def tests_abort(access_token, test_run_id, reason='Not specified.'):
+    return post('tests/abort', {'access_token':access_token, 'test_run_id': test_run_id, 'reason':reason})
+
 ###################
 ## Config file API
 ###################
@@ -115,7 +118,8 @@ def config_upload(access_token, source, test_id):
 def print_single_test_response(test_response):
     try:
         for response_type in ['output', 'errors', 'exception', 'number_passes', 'number_fails']:
-            response_text = test_response[response_type] if response_type in test_response else None
+            response_text = test_response[response_type] or None
+            response_text = None if type(response_text) in ('unicode', 'str') and response_text.strip() == '' else response_text
             log("Test %s: %s" % (response_type, response_text))
 
         response_pass = test_response['pass']
@@ -270,6 +274,18 @@ class AppurifyClient():
         else:
             raise AppurifyClientError('runTest failed scheduling test with response %s' % r.text)
 
+    def abortTest(self, test_run_id, reason):
+        r = tests_abort(self.access_token, test_run_id, reason)
+        if r.status_code == 200:
+            response = r.json()['response']
+            if response['status'] == 'aborting':
+                log("aborting test run id %s" % test_run_id)
+            elif response['status'] == 'complete':
+                log("test run id %s is complete" % test_run_id)
+            return True
+        else:
+            False
+
     def printConfigs(self, configs):
         if configs:
             found_config = False
@@ -352,13 +368,17 @@ class AppurifyClient():
             # start test run
             test_run_id, queue_timeout_limit, configs = self.runTest(app_id, test_id)
             self.printConfigs(configs)
-
+            
             # poll for results and print report
             test_status_response = self.pollTestResult(test_run_id, queue_timeout_limit)
             all_pass = self.reportTestResult(test_status_response)
-
+            
             if not all_pass:
                 exit_code = -1
+        except KeyboardInterrupt, e:
+            response = self.abortTest(test_run_id, repr(e))
+            log(str(e))
+            exit_code = 1
         except Exception, e:
             log(str(e))
             exit_code = 1
@@ -391,6 +411,7 @@ def init():
     parser.add_argument('--test-src', help='Path or Url of test file to upload')
     parser.add_argument('--test-type', help='Type of test being uploaded')
     parser.add_argument('--test-id', help='Specify to use previously uploaded test file')
+    parser.add_argument('--test-run-id', help='Specify test run id (required only while running tests_check_result action)')
 
     parser.add_argument('--device-type-id', help='Device type to reserve and run tests upon (you may run tests on multiple devices by using a comma separated list of device IDs)')
     parser.add_argument('--device-id', help='Specify to use a particular device')
@@ -415,6 +436,7 @@ def init():
     if args.access_token == None and (args.api_key == None or args.api_secret == None):
         parser.error('--access-token OR --api-key and --api-secret is required')
 
+    kwargs['test_run_id'] = args.test_run_id
     kwargs['api_key'] = args.api_key
     kwargs['api_secret'] = args.api_secret
     kwargs['access_token'] = args.access_token
