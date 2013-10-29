@@ -270,7 +270,7 @@ class AppurifyClient():
                     configs = map(lambda x: x['config'], test_response['test_runs'])
                 except:
                     configs = []
-            return (test_run_id, configs)
+            return (test_run_id, test_response['queue_timeout_limit'], configs)
         else:
             raise AppurifyClientError('runTest failed scheduling test with response %s' % r.text)
 
@@ -298,11 +298,11 @@ class AppurifyClient():
                 print "Default"
             print "== End device configurations =="
 
-    def pollTestResult(self, test_run_id):
+    def pollTestResult(self, test_run_id, queue_timeout_limit):
         test_status = None
         runtime = 0
 
-        while test_status != 'complete' and runtime < self.timeout:
+        while test_status != 'complete' and runtime < queue_timeout_limit:
             time.sleep(self.poll_every)
             r = tests_check_result(self.access_token, test_run_id)
             test_status_response = r.json()['response']
@@ -366,11 +366,11 @@ class AppurifyClient():
                 self.uploadConfig(test_id, config_src)
             
             # start test run
-            test_run_id, configs = self.runTest(app_id, test_id)
+            test_run_id, queue_timeout_limit, configs = self.runTest(app_id, test_id)
             self.printConfigs(configs)
             
             # poll for results and print report
-            test_status_response = self.pollTestResult(test_run_id)
+            test_status_response = self.pollTestResult(test_run_id, queue_timeout_limit)
             all_pass = self.reportTestResult(test_status_response)
             
             if not all_pass:
