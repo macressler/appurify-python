@@ -115,7 +115,7 @@ def config_upload(access_token, source, test_id):
 def print_single_test_response(test_response):
     try:
         for response_type in ['output', 'errors', 'exception', 'number_passes', 'number_fails']:
-            response_text = test_response[response_type] or None
+            response_text = test_response[response_type] if response_type in test_response else None
             log("Test %s: %s" % (response_type, response_text))
 
         response_pass = test_response['pass']
@@ -266,7 +266,7 @@ class AppurifyClient():
                     configs = map(lambda x: x['config'], test_response['test_runs'])
                 except:
                     configs = []
-            return (test_run_id, configs)
+            return (test_run_id, test_response['queue_timeout_limit'], configs)
         else:
             raise AppurifyClientError('runTest failed scheduling test with response %s' % r.text)
 
@@ -282,11 +282,11 @@ class AppurifyClient():
                 print "Default"
             print "== End device configurations =="
 
-    def pollTestResult(self, test_run_id):
+    def pollTestResult(self, test_run_id, queue_timeout_limit):
         test_status = None
         runtime = 0
 
-        while test_status != 'complete' and runtime < self.timeout:
+        while test_status != 'complete' and runtime < queue_timeout_limit:
             time.sleep(self.poll_every)
             r = tests_check_result(self.access_token, test_run_id)
             test_status_response = r.json()['response']
@@ -344,15 +344,17 @@ class AppurifyClient():
             # upload app/test of use passed id's
             app_id = self.args.get('app_id', None) or self.uploadApp()
             test_id = self.args.get('test_id', None) or self.uploadTest(app_id)
+            
             config_src = self.args.get('config_src', False)
             if config_src:
                 self.uploadConfig(test_id, config_src)
+            
             # start test run
-            test_run_id, configs = self.runTest(app_id, test_id)
+            test_run_id, queue_timeout_limit, configs = self.runTest(app_id, test_id)
             self.printConfigs(configs)
 
             # poll for results and print report
-            test_status_response = self.pollTestResult(test_run_id)
+            test_status_response = self.pollTestResult(test_run_id, queue_timeout_limit)
             all_pass = self.reportTestResult(test_status_response)
 
             if not all_pass:
