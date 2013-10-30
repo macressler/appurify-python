@@ -11,7 +11,7 @@
 # Current development version
 # Increment this during development as and when desired
 # setup.py will use this version to generate new releases
-VERSION = (0, 2, 4)
+VERSION = (0, 2, 5)
 __version__ = '.'.join(map(str, VERSION[0:3])) + ''.join(VERSION[3:])
 
 # Last tagged stable version
@@ -61,11 +61,12 @@ SUPPORTED_TEST_TYPES = [
     'network_headers',
     'ios_sencharobot',
     'android_monkey',
-    'calabash_refresh_app'
+    'calabash_refresh_app',
+    'ios_webviewrobot'
 ]
 
-NO_TEST_SOURCE = ['ios_robot', 'ios_webrobot', 'browser_test', 'kif', 'kif:google', 'network_headers', 'ios_sencharobot']
-NO_APP_SOURCE = ['ios_selenium','android_selenium','ios_webrobot', 'browser_test', 'network_headers']
+NO_TEST_SOURCE = ['ios_robot', 'ios_webrobot', 'browser_test', 'kif', 'kif:google', 'network_headers', 'ios_sencharobot', 'ios_webviewrobot']
+NO_APP_SOURCE = ['ios_selenium','android_selenium','ios_webrobot', 'browser_test', 'network_headers', 'ios_webviewrobot']
 
 SUPPORTED_ACTIONS = [
     'access_token_generate',
