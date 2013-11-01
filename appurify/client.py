@@ -89,12 +89,12 @@ def apps_upload(access_token, source, source_type, type=None, name=None):
 def tests_list(access_token):
     return get('tests/list', {'access_token':access_token})
 
-def tests_upload(access_token, source, source_type, type, app_id = None):
-    files = None if source_type == 'url' else {'source':source}
-    data = {'access_token':access_token, 'source_type':source_type, 'test_type': type}
+def tests_upload(access_token, test_source, test_source_type, test_type, app_id = None):
+    files = None if test_source_type == 'url' else {'source':test_source}
+    data = {'access_token':access_token, 'source_type':test_source_type, 'test_type': test_type}
     if app_id:
         data['app_id'] = app_id
-    if source_type == 'url': data['source'] = source
+    if test_source_type == 'url': data['source'] = test_source
     return post('tests/upload', data, files)
 
 def tests_run(access_token, device_type_id, app_id, test_id, device_id=None):
@@ -110,9 +110,9 @@ def tests_abort(access_token, test_run_id, reason='Not specified.'):
 ## Config file API
 ###################
 
-def config_upload(access_token, source, test_id):
+def config_upload(access_token, config_src, test_id):
     """Upload a configuration file to associate with a test."""
-    data, files = {'access_token':access_token, 'test_id': test_id}, {'source':source}
+    data, files = {'access_token':access_token, 'test_id': test_id}, {'source':config_src}
     return post('tests/config/upload', data, files)
 
 ##########################
