@@ -173,15 +173,21 @@ class AppurifyHttpClient(object):
             else:
                 # received response from higher up the stack
                 log('Received unexpected response from API, waiting for service to resume...')
-                self.wait_for_api_service()
                 exc = AppurifyHttpClientError('API failure with response %s, code %s' % (response.text, response.status_code))
-                return self.retry_or_raise(exc)
+                if os.environ.get('APPURIFY_API_WAIT_FOR_SERVICE', API_WAIT_FOR_SERVICE) == 1:
+                    self.wait_for_api_service()
+                    return self.retry_or_raise(exc)
+                else:
+                    raise exc
         except requests.exceptions.ConnectionError as e:
             # either no internet connectivity / dns failures
             # or lb is not responding/down
             log('Connection to API server failed, waiting for service to resume...')
-            self.wait_for_api_service()
-            return self.retry_or_raise(AppurifyHttpClientError('API failure with reason %s' % str(e)))
+            if os.environ.get('APPURIFY_API_WAIT_FOR_SERVICE', API_WAIT_FOR_SERVICE) == 1:
+                self.wait_for_api_service()
+                return self.retry_or_raise(AppurifyHttpClientError('API failure with reason %s' % str(e)))
+            else:
+                raise e
     
     def retry_or_raise(self, exc):
         if self.retry_on_failure() and self.retry_count < self.max_retry():

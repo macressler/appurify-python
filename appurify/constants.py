@@ -40,6 +40,7 @@ API_MAX_RETRY = 3               # if retry on failure is enabled, how many times
 API_STATUS_BASE_URL = 'https://s3-us-west-1.amazonaws.com/appurify-api-status'
 API_STATUS_UP = 1               # aws status page says service is up
 API_STATUS_DOWN = 2             # service is down
+API_WAIT_FOR_SERVICE = 1
 
 SUPPORTED_TEST_TYPES = [
     'calabash',

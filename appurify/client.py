@@ -43,6 +43,10 @@ def access_token_validate(access_token):
     """Verify that an access token is valid and retrieve the remaining ttl for that token"""
     return post('access_token/validate', {'access_token':access_token})
 
+def access_token_revoke(access_token):
+    """Revoke access token."""
+    return post('access_token/revoke', {'access_token':access_token})
+
 ##############
 ## Device API
 ##############
