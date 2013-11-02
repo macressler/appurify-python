@@ -324,8 +324,7 @@ class AppurifyClient():
                 log("Test progress: {}".format(test_status_response.get('detailed_status', 'status-unavailable')))
             runtime = runtime + self.poll_every
 
-        raise AppurifyClientError("Test result poll timed out after %s seconds" % self.timeout)
-
+        raise AppurifyClientError("Test result poll timed out after %s seconds" % queue_timeout_limit)
 
     def reportTestResult(self, test_status_response):
         test_response = test_status_response['results']
