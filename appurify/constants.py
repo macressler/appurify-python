@@ -63,11 +63,12 @@ SUPPORTED_TEST_TYPES = [
     'ios_sencharobot',
     'android_monkey',
     'calabash_refresh_app',
-    'ios_webviewrobot'
+    'ios_webviewrobot',
+    'ios_wpt',
 ]
 
-NO_TEST_SOURCE = ['ios_robot', 'ios_webrobot', 'browser_test', 'kif', 'kif:google', 'network_headers', 'ios_sencharobot', 'ios_webviewrobot']
-NO_APP_SOURCE = ['ios_selenium','android_selenium','ios_webrobot', 'browser_test', 'network_headers', 'ios_webviewrobot']
+NO_TEST_SOURCE = ['ios_robot', 'ios_webrobot', 'browser_test', 'kif', 'kif:google', 'network_headers', 'ios_sencharobot', 'ios_webviewrobot', 'ios_wpt']
+NO_APP_SOURCE = ['ios_selenium','android_selenium','ios_webrobot', 'browser_test', 'network_headers', 'ios_webviewrobot', 'ios_wpt']
 
 SUPPORTED_ACTIONS = [
     'access_token_generate',
