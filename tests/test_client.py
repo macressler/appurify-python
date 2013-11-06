@@ -130,7 +130,8 @@ def mockRequestPost(url, data, files=None, verify=False, headers={'User-Agent': 
                                     "status": "queueing",
                                     "test_id": "test_test_id",
                                     "app_id": "test_app_id",
-                                    "test_run_id": "test_test_run_id"
+                                    "test_run_id": "test_test_run_id",
+                                    "queue_timeout_limit": 2
                                 }
                             })
 
@@ -213,7 +214,7 @@ def mockRequestPostMulti(url, data, files=None, verify=False, headers={'User-Age
                         "test_id": "test_test_id",
                         "app_id": "test_app_id",
                         "test_run_id": "test_test_run_id1",
-                        "device_type_id": 58
+                        "device_type_id": 58,
                     },
                     {
                         "id": 16291,
@@ -284,10 +285,11 @@ def mockRequestPostMulti(url, data, files=None, verify=False, headers={'User-Age
                         "test_id": "test_test_id",
                         "app_id": "test_app_id",
                         "test_run_id": "test_test_run_id2",
-                        "device_type_id": 61
+                        "device_type_id": 61,
                     }
                 ],
-                "app_id": "test_app_id"
+                "app_id": "test_app_id",
+                "queue_timeout_limit": 2
             }
         })
     else:
@@ -413,7 +415,7 @@ class TestRun(unittest.TestCase):
     @mock.patch("requests.post", mockRequestPost)
     def testRunTestSingle(self):
         client = AppurifyClient(access_token="authenticated")
-        test_run_id, configs = client.runTest("app_id", "test_test_id")
+        test_run_id, queue_timeout_limit, configs = client.runTest("app_id", "test_test_id")
         self.assertEqual(test_run_id, "test_test_run_id", "Should get test_run_id when executing run")
         self.assertEqual(len(configs), 1, "Should get config back for test run")
         self.assertEqual(configs[0]['device']['id'], 123, "Sanity check parameters")
@@ -421,7 +423,7 @@ class TestRun(unittest.TestCase):
     @mock.patch("requests.post", mockRequestPostMulti)
     def testRunTestMulti(self):
         client = AppurifyClient(access_token="authenticated")
-        test_run_id, configs = client.runTest("app_id", "test_test_id")
+        test_run_id, queue_timeout_limit, configs = client.runTest("app_id", "test_test_id")
         self.assertEqual(test_run_id, "test_test_run_id1,test_test_run_id2", "Should get test_run_ids when executing run")
         self.assertEqual(len(configs), 2, "Should get config back for test run")
         self.assertEqual(configs[0]['device']['id'], 123, "Sanity check parameters")
@@ -430,7 +432,7 @@ class TestRun(unittest.TestCase):
     def testPollTestResult(self):
         mockRequestGet.count = 0
         client = AppurifyClient(access_token="authenticated", timeout_sec=2, poll_every=0.1)
-        test_status_response = client.pollTestResult("test_test_run_id")
+        test_status_response = client.pollTestResult("test_test_run_id", 2)
         self.assertEqual(test_status_response['status'], "complete", "Should poll until complete")
 
     @mock.patch("requests.post", mockRequestPost)
@@ -466,7 +468,7 @@ class TestRun(unittest.TestCase):
         mockRequestGet.count = -20
         client = AppurifyClient(access_token="authenticated", timeout_sec=0.2, poll_every=0.1)
         with self.assertRaises(AppurifyClientError):
-            client.pollTestResult("test_test_run_id")
+            client.pollTestResult("test_test_run_id", 0.2)
 
     @mock.patch("requests.post", mockRequestPost)
     @mock.patch("requests.get", mockRequestGet)

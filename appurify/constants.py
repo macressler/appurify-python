@@ -40,6 +40,7 @@ API_MAX_RETRY = 3               # if retry on failure is enabled, how many times
 API_STATUS_BASE_URL = 'https://s3-us-west-1.amazonaws.com/appurify-api-status'
 API_STATUS_UP = 1               # aws status page says service is up
 API_STATUS_DOWN = 2             # service is down
+API_WAIT_FOR_SERVICE = 1
 
 SUPPORTED_TEST_TYPES = [
     'calabash',
@@ -62,11 +63,12 @@ SUPPORTED_TEST_TYPES = [
     'ios_sencharobot',
     'android_monkey',
     'calabash_refresh_app',
-    'ios_webviewrobot'
+    'ios_webviewrobot',
+    'ios_wpt',
 ]
 
-NO_TEST_SOURCE = ['ios_robot', 'ios_webrobot', 'browser_test', 'kif', 'kif:google', 'network_headers', 'ios_sencharobot', 'ios_webviewrobot']
-NO_APP_SOURCE = ['ios_selenium','android_selenium','ios_webrobot', 'browser_test', 'network_headers', 'ios_webviewrobot']
+NO_TEST_SOURCE = ['ios_robot', 'ios_webrobot', 'browser_test', 'kif', 'kif:google', 'network_headers', 'ios_sencharobot', 'ios_webviewrobot', 'ios_wpt']
+NO_APP_SOURCE = ['ios_selenium','android_selenium','ios_webrobot', 'browser_test', 'network_headers', 'ios_webviewrobot', 'ios_wpt']
 
 SUPPORTED_ACTIONS = [
     'access_token_generate',
