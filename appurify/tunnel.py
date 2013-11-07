@@ -21,6 +21,7 @@ import datetime
 import tempfile
 import atexit
 import time
+import logging
 
 from . import constants
 from .utils import log, post
@@ -366,7 +367,7 @@ class Proxy(threading.Thread):
             self.close()
 
     def bad_gateway(self, e):
-        logging.exception(e)
+        log(e, logging.ERROR)
         log(self.request.raw)
         self.client.send("HTTP/1.1 502 Bad Gateway%s%r%s%s" % (CRLF, e, CRLF, CRLF))
 
