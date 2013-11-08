@@ -11,14 +11,14 @@
 # Current development version
 # Increment this during development as and when desired
 # setup.py will use this version to generate new releases
-VERSION = (0, 2, 5)
+VERSION = (0, 2, 6)
 __version__ = '.'.join(map(str, VERSION[0:3])) + ''.join(VERSION[3:])
 
 # Last tagged stable version
 # Bump this to match VERSION when dev version is stable for new release
 # and also have passed Sencha architect tool integration tests
 # This variable is only used by REST API (/client/version/)
-STABLE_VERSION = (0, 2, 0)
+STABLE_VERSION = (0, 2, 5)
 __stable_version__ = '.'.join(map(str, STABLE_VERSION[0:3])) + ''.join(STABLE_VERSION[3:])
 
 __homepage__ = 'http://appurify.com'
@@ -30,7 +30,6 @@ API_PROTO = "https"             # override using APPURIFY_API_PROTO environment 
 API_HOST = "live.appurify.com"  # APPURIFY_API_HOST
 API_PORT = 443                  # APPURIFY_API_PORT
 
-API_TIMEOUT_SEC = 1800          # client mark test as failed after timeout seconds (APPURIFY_API_TIMEOUT)
 API_POLL_SEC = 15               # test result polled every poll seconds (APPURIFY_API_POLL_DELAY)
 
 API_RETRY_ON_FAILURE = 1        # should client retry API calls in case of non-200 response (APPURIFY_API_RETRY_ON_FAILURE)

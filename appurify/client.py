@@ -178,7 +178,7 @@ class AppurifyClient():
         self.args = kwargs
 
         self.access_token = self.args.get('access_token', None)
-        self.timeout = self.args.get('timeout_sec', None) or int(os.environ.get('APPURIFY_API_TIMEOUT', constants.API_TIMEOUT_SEC))
+        self.timeout = self.args.get('timeout_sec', None)
         self.poll_every = self.args.get('poll_every', None) or os.environ.get('APPURIFY_API_POLL_DELAY', constants.API_POLL_SEC)
 
         self.test_type = self.args.get('test_type' or None)
@@ -302,11 +302,11 @@ class AppurifyClient():
                 print "Default"
             print "== End device configurations =="
 
-    def pollTestResult(self, test_run_id, queue_timeout_limit):
+    def pollTestResult(self, test_run_id, timeout_limit):
         test_status = None
         runtime = 0
 
-        while test_status != 'complete' and runtime < queue_timeout_limit:
+        while test_status != 'complete' and runtime < timeout_limit:
             time.sleep(self.poll_every)
             r = tests_check_result(self.access_token, test_run_id)
             test_status_response = r.json()['response']
@@ -318,13 +318,13 @@ class AppurifyClient():
                 log("**** COMPLETE - JSON SUMMARY ENDS ****")
                 return test_status_response
             else:
-                log("%s sec elapsed" % str(runtime))
+                log("%s sec elapsed (timeout in %s)" % (runtime, (timeout_limit - runtime)))
                 if 'message' in test_status_response:
                     log(test_status_response['message'])
                 log("Test progress: {}".format(test_status_response.get('detailed_status', 'status-unavailable')))
             runtime = runtime + self.poll_every
 
-        raise AppurifyClientError("Test result poll timed out after %s seconds" % queue_timeout_limit)
+        raise AppurifyClientError("Test result poll timed out after %s seconds" % timeout_limit)
 
     def reportTestResult(self, test_status_response):
         test_response = test_status_response['results']
@@ -371,9 +371,10 @@ class AppurifyClient():
             # start test run
             test_run_id, queue_timeout_limit, configs = self.runTest(app_id, test_id)
             self.printConfigs(configs)
-            
+
+            self.timeout = self.timeout or queue_timeout_limit
             # poll for results and print report
-            test_status_response = self.pollTestResult(test_run_id, queue_timeout_limit)
+            test_status_response = self.pollTestResult(test_run_id, self.timeout)
             all_pass = self.reportTestResult(test_status_response)
             
             if not all_pass:
@@ -426,6 +427,8 @@ def init():
     parser.add_argument('--name', help='Optional, the name of the app to display')
 
     parser.add_argument('--disable-ssl-check', help="Optional, if set, don't verify SSL certificates (ie if you're using self-signed certs)", action="store_true")
+
+    parser.add_argument('--timeout', help='Optional, timeout in seconds before the client assumes the test has failed. Defaults to server timeout value (approx 3 hours)')
 
     kwargs = {}
     args = parser.parse_args()
@@ -510,6 +513,12 @@ def init():
 
     # (optional) app name
     kwargs['name'] = args.name
+
+    # (optional) timeout
+    try:
+        kwargs['timeout_sec'] = int(args.timeout)
+    except:
+        pass
 
     client = AppurifyClient(**kwargs)
     sys.exit(client.main())
