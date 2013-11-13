@@ -274,7 +274,8 @@ class AppurifyClient():
                     configs = map(lambda x: x['config'], test_response['test_runs'])
                 except:
                     configs = []
-            return (test_run_id, test_response['queue_timeout_limit'], configs)
+
+            return (test_run_id, test_response['queue_timeout_limit'] if 'queue_timeout_limit' in test_response else self.timeout, configs)
         else:
             raise AppurifyClientError('runTest failed scheduling test with response %s' % r.text)
 
