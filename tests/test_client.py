@@ -215,6 +215,7 @@ def mockRequestPostMulti(url, data, files=None, verify=False, headers={'User-Age
                         "app_id": "test_app_id",
                         "test_run_id": "test_test_run_id1",
                         "device_type_id": 58,
+                        "queue_timeout_limit": 2,
                     },
                     {
                         "id": 16291,
@@ -286,10 +287,10 @@ def mockRequestPostMulti(url, data, files=None, verify=False, headers={'User-Age
                         "app_id": "test_app_id",
                         "test_run_id": "test_test_run_id2",
                         "device_type_id": 61,
+                        "queue_timeout_limit": 2,
                     }
                 ],
                 "app_id": "test_app_id",
-                "queue_timeout_limit": 2
             }
         })
     else:
