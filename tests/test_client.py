@@ -15,6 +15,7 @@ python -m unittest tests.test_client
 import unittest
 import json
 import mock
+import os
 from appurify.client import AppurifyClient, AppurifyClientError
 
 class TestObject(object):
@@ -463,6 +464,48 @@ class TestRun(unittest.TestCase):
                                 timeout_sec=2, poll_every=0.1)
         result_code = client.main()
         self.assertEqual(result_code, 0, "Main should execute and return pass code")
+
+    @mock.patch("requests.post", mockRequestPost)
+    @mock.patch("requests.get", mockRequestGet)
+    def testMainPassUrl(self):
+        mockRequestGet.count = 0
+        mockRequestGet.passes = 2
+        mockRequestGet.fails = 0
+        mockRequestGet.pass_val = True
+        client = AppurifyClient(api_key="test_key", api_secret="test_secret", test_type="ios_webrobot", 
+                                app_src=None, 
+                                test_src=None,
+                                url="www.yahoo.com",
+                                timeout_sec=2, poll_every=0.1)
+        result_code = client.main()
+        self.assertEqual(result_code, 0, "Main should execute and return pass code")
+
+    @mock.patch("requests.get", mockRequestGet)
+    def testDefaultPollTimeout(self):
+        old_env = os.environ.get('APPURIFY_API_TIMEOUT', None)
+        try:
+            os.environ['APPURIFY_API_TIMEOUT'] = '0.2'
+            mockRequestGet.count = -20
+            client = AppurifyClient(access_token="authenticated",  poll_every=0.1)
+            with self.assertRaises(AppurifyClientError):
+                client.pollTestResult("test_test_run_id", 0.2)
+        finally:
+            if old_env:
+                os.environ['APPURIFY_API_TIMEOUT'] = str(old_env)
+
+    @mock.patch("requests.post", mockRequestPost)
+    @mock.patch("requests.get", mockRequestGet)
+    def testDefaultPollTimeoutCode(self):
+        old_env = os.environ.get('APPURIFY_API_TIMEOUT', None)
+        try:
+            os.environ['APPURIFY_API_TIMEOUT'] = '0.2'
+            mockRequestGet.count = -20
+            client = AppurifyClient(access_token="authenticated", poll_every=0.1)
+            result_code = client.main()
+            self.assertEqual(result_code, 1, "Main should execute and return error code with default timeout")
+        finally:
+            if old_env:
+                os.environ['APPURIFY_API_TIMEOUT'] = str(old_env)
 
     @mock.patch("requests.get", mockRequestGet)
     def testPollTimeout(self):
