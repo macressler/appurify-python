@@ -74,12 +74,13 @@ def devices_config_networks_list(access_token):
 def apps_list(access_token):
     return get('apps/list', {'access_token':access_token})
 
-def apps_upload(access_token, source, source_type, type=None, name=None):
+def apps_upload(access_token, source, source_type, type=None, name=None, webapp_url=None):
     files = None if source_type == 'url' else {'source':source}
     data = {'access_token':access_token, 'source_type':source_type}
     if source_type == 'url': data['source'] = source
     if type: data['app_test_type'] = type
     if name: data['name'] = name
+    if webapp_url: data['url'] = webapp_url
     return post('apps/upload', data, files)
 
 ############
@@ -178,7 +179,7 @@ class AppurifyClient():
         self.args = kwargs
 
         self.access_token = self.args.get('access_token', None)
-        self.timeout = self.args.get('timeout_sec', None)
+        self.timeout = self.args.get('timeout_sec', None) or os.environ.get('APPURIFY_API_TIMEOUT', None)
         self.poll_every = self.args.get('poll_every', None) or os.environ.get('APPURIFY_API_POLL_DELAY', constants.API_POLL_SEC)
 
         self.test_type = self.args.get('test_type' or None)
@@ -211,8 +212,12 @@ class AppurifyClient():
         app_src_type = self.args.get('app_src_type', None)
         app_src = self.args.get('app_src', None)
         app_name = self.args.get('name', None)
+        webapp_url = self.args.get('url', None)
         if app_src is None and self.test_type in constants.NO_APP_SOURCE:
-            r = apps_upload(self.access_token, None, 'url', self.test_type, name=app_name)
+            if webapp_url is None and app_name is None:
+                log('WARNING: url for this webapp was not passed (using --url parameter). The results for this app will appear under unclassified_app_group in the UI.') 
+                log('    To avoid this issue, please pass the url of the website under test using the --url parameter') 
+            r = apps_upload(self.access_token, None, 'url', self.test_type, name=app_name, webapp_url=webapp_url)
         else:
             if app_src is None:
                 raise AppurifyClientError("app src is required for test type %s" % self.test_type)
@@ -426,6 +431,7 @@ def init():
     parser.add_argument('--action', help='Specific API to call (default: main)')
 
     parser.add_argument('--name', help='Optional, the name of the app to display')
+    parser.add_argument('--url', help='If the app being tested is a web application, url of the web application')
 
     parser.add_argument('--disable-ssl-check', help="Optional, if set, don't verify SSL certificates (ie if you're using self-signed certs)", action="store_true")
 
@@ -514,6 +520,8 @@ def init():
 
     # (optional) app name
     kwargs['name'] = args.name
+
+    kwargs['url'] = args.url
 
     # (optional) timeout
     try:
