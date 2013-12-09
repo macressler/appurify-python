@@ -116,7 +116,10 @@ class AppurifyHttpClient(object):
     @staticmethod
     def api_status():
         """returns api service status from aws status page."""
-        url = '%s/%s.txt' % (constants.API_STATUS_BASE_URL, AppurifyHttpClient.host().split('.')[0])
+        api_check = os.environ.get('APPURIFY_STATUS_BASE_URL', constants.API_STATUS_BASE_URL)
+        if api_check.lower() == 'none':
+            return constants.API_STATUS_UP
+        url = '%s/%s.txt' % (api_check, AppurifyHttpClient.host().split('.')[0])
         print url
         r = requests.get(url)
         if r.status_code == 200:
