@@ -11,14 +11,14 @@
 # Current development version
 # Increment this during development as and when desired
 # setup.py will use this version to generate new releases
-VERSION = (0, 2, 7)
+VERSION = (0, 2, 8)
 __version__ = '.'.join(map(str, VERSION[0:3])) + ''.join(VERSION[3:])
 
 # Last tagged stable version
 # Bump this to match VERSION when dev version is stable for new release
 # and also have passed Sencha architect tool integration tests
 # This variable is only used by REST API (/client/version/)
-STABLE_VERSION = (0, 2, 5)
+STABLE_VERSION = (0, 2, 7)
 __stable_version__ = '.'.join(map(str, STABLE_VERSION[0:3])) + ''.join(STABLE_VERSION[3:])
 
 __homepage__ = 'http://appurify.com'
