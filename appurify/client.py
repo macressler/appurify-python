@@ -437,8 +437,14 @@ def init():
 
     parser.add_argument('--timeout', help='Optional, timeout in seconds before the client assumes the test has failed. Defaults to server timeout value (approx 3 hours)')
 
+    parser.add_argument('--version', help='Print client version and exit', action='store_true')
+
     kwargs = {}
     args = parser.parse_args()
+
+    if args.version:
+        print(constants.__version__)
+        sys.exit(0)
 
     # (optional) when 'main' is the requested action
     # (required) when 'devices_config' is the requested action

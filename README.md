@@ -44,6 +44,9 @@ Found a bug or want to add a much needed feature?  Go for it and just send us th
 
 ## Release Notes
 
+### 0.2.8 
+- Added ```--version``` flag to print version and exit
+
 ### 0.2.6
 - Users will receive a warning when attempting to upload a web test without specifying the url parameter.
 - Support for both ```--timeout``` parameter to specify the desired timeout at runtime, or using the os environment variable ```APPURIFY_API_TIMEOUT```. Specify desired timeout in seconds. 
