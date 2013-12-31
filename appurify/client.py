@@ -146,7 +146,14 @@ def download_test_response(results_url, result_dir, verify=True):
         if result_dir:
             result_path = result_dir + '/' + 'results.zip'
             log("Saving results to %s" % result_path)
-            wget(results_url, result_path, verify)
+            try_count = 1
+            status_code = 0
+            while try_count <= 5 and status_code != 200:
+                time.sleep(try_count)
+                status_code = wget(results_url, result_path, verify)
+                try_count = try_count + 1
+            if try_count > 5:
+                log("Error downloading url %s, failed after 5 retries" % results_url)
     except Exception as e:
         log("Error downloading test result file: %s" % e)
 
