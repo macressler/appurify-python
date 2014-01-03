@@ -41,6 +41,8 @@ API_STATUS_UP = 1               # aws status page says service is up
 API_STATUS_DOWN = 2             # service is down
 API_WAIT_FOR_SERVICE = 1
 
+MAX_DOWNLOAD_RETRIES = 10       # Number of times it will try (with increasing wait times) to download results before giving up
+
 SUPPORTED_TEST_TYPES = [
     'calabash',
     'ocunit',

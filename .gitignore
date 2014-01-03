@@ -10,3 +10,6 @@ appurify.egg-info/
 # cover
 .coverage
 cover/
+
+.project
+.pydevproject
