@@ -5,7 +5,7 @@ The official Python client for the [Appurify](http://www.appurify.com) API.
 ### Installation
 
 ```
-pip install appurify-0.2.7.tar.gz
+pip install appurify-0.2.9.tar.gz
 ```
 
 This will install any missing dependencies and add two executable scripts to your bin folder:
@@ -44,8 +44,12 @@ Found a bug or want to add a much needed feature?  Go for it and just send us th
 
 ## Release Notes
 
+### 0.2.9
+- Handle case where test results may not immediately be ready for download after a test completes.
+
 ### 0.2.8 
 - Added ```--version``` flag to print version and exit
+
 
 ### 0.2.6
 - Users will receive a warning when attempting to upload a web test without specifying the url parameter.
