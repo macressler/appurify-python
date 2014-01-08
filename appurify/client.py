@@ -187,6 +187,9 @@ class AppurifyClient():
 
         self.access_token = self.args.get('access_token', None)
         self.timeout = self.args.get('timeout_sec', None) or os.environ.get('APPURIFY_API_TIMEOUT', None)
+        if self.timeout is not None:
+            self.timeout = float(self.timeout)
+
         self.poll_every = self.args.get('poll_every', None) or os.environ.get('APPURIFY_API_POLL_DELAY', constants.API_POLL_SEC)
 
         self.test_type = self.args.get('test_type' or None)
