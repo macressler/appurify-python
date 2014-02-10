@@ -13,3 +13,4 @@ cover/
 
 .project
 .pydevproject
+build/
