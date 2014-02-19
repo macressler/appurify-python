@@ -11,7 +11,7 @@
 # Current development version
 # Increment this during development as and when desired
 # setup.py will use this version to generate new releases
-VERSION = (0, 3, 2)
+VERSION = (0, 3, 3)
 __version__ = '.'.join(map(str, VERSION[0:3])) + ''.join(VERSION[3:])
 
 # Last tagged stable version
@@ -67,10 +67,13 @@ SUPPORTED_TEST_TYPES = [
     'ios_webviewrobot',
     'ios_wpt',
     'touch_test',
-    'ios_monkeytalk'
+    'ios_monkeytalk',
+    'android_robot',
+    'android_monkeytalk',
+    'espresso'
 ]
 
-NO_TEST_SOURCE = ['ios_robot', 'ios_webrobot', 'browser_test', 'kif', 'kif:google', 'network_headers', 'ios_sencharobot', 'ios_webviewrobot', 'ios_wpt','touch_test']
+NO_TEST_SOURCE = ['ios_robot', 'ios_webrobot', 'browser_test', 'kif', 'kif:google', 'network_headers', 'ios_sencharobot', 'ios_webviewrobot', 'ios_wpt', 'touch_test', 'android_robot']
 NO_APP_SOURCE = ['ios_selenium','android_selenium','ios_webrobot', 'browser_test', 'network_headers', 'ios_webviewrobot', 'ios_wpt']
 
 SUPPORTED_ACTIONS = [
