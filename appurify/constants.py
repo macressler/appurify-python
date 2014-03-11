@@ -54,6 +54,7 @@ EXIT_CODE_AUTH_FAILURE = 6      # Test could not execute because the server reje
 EXIT_CODE_OTHER_EXCEPTION = 7   # Test could not execute because of other server/remote exception
 EXIT_CODE_CLIENT_EXCEPTION = 8  # Test could not execute because of an unexpected error in the client
 
+# TODO: Probably should be fetching these from the server at some point
 EXIT_CODE_EXCEPTION_MAP = {EXIT_CODE_TEST_ABORT : [4000, 5000],
                           EXIT_CODE_TEST_TIMEOUT : [4001, 4002, 4003, 1010],
                           EXIT_CODE_DEVICE_FAILURE: [1000, 1001, 1002, 1005, 1008, 1009, 1011, 1012, 1013, 1014],
