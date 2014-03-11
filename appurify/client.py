@@ -297,7 +297,7 @@ class AppurifyClient():
 
             return (test_run_id, test_response['queue_timeout_limit'] if 'queue_timeout_limit' in test_response else self.timeout, configs)
         else:
-            raise AppurifyClientError('runTest failed scheduling test with response %s' % r.text)
+            raise AppurifyClientError('runTest failed scheduling test with response %s' % r.text, exit_code=constants.EXIT_CODE_OTHER_EXCEPTION)
 
     def abortTest(self, test_run_id, reason):
         r = tests_abort(self.access_token, test_run_id, reason)
@@ -345,10 +345,10 @@ class AppurifyClient():
                 log("Test progress: {}".format(test_status_response.get('detailed_status', 'status-unavailable')))
             runtime = runtime + self.poll_every
 
-        raise AppurifyClientError("Test result poll timed out after %s seconds" % timeout_limit)
+        raise AppurifyClientError("Test result poll timed out after %s seconds" % timeout_limit, exit_code=constants.EXIT_CODE_TEST_TIMEOUT)
 
     def reportTestResult(self, test_status_response):
-        exit_code = 0
+        exit_code = constants.EXIT_CODE_ALL_PASS
         test_response = test_status_response['results']
         result_dir = self.args.get('result_dir', None)
         if 'complete_count' in test_status_response:
@@ -381,9 +381,7 @@ class AppurifyClient():
 
     def main(self):
         """
-        Returns 0 if all tests run with no errors
-        Returns -1 if there were test errors
-        Returns 1 if tests failed because of a script or server fault
+        See constants for return codes
         """
         exit_code = 0
 
@@ -409,10 +407,13 @@ class AppurifyClient():
             # poll for results and print report
             test_status_response = self.pollTestResult(test_run_id, self.timeout)
             exit_code = self.reportTestResult(test_status_response)
-        except KeyboardInterrupt, e:
-            response = self.abortTest(test_run_id, repr(e))
+        except AppurifyClientError, e:
             log(str(e))
-            exit_code = 1
+            exit_code = e.exit_code
+        except KeyboardInterrupt, e:
+            self.abortTest(test_run_id, repr(e))
+            log(str(e))
+            exit_code = constants.EXIT_CODE_TEST_ABORT
         except Exception, e:
             log(str(e))
             exit_code = constants.EXIT_CODE_CLIENT_EXCEPTION

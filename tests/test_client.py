@@ -537,9 +537,13 @@ class TestRun(unittest.TestCase):
         try:
             os.environ['APPURIFY_API_TIMEOUT'] = '0.2'
             mockRequestGet.count = -20
-            client = AppurifyClient(access_token="authenticated", poll_every=0.1)
+            client = AppurifyClient(api_key="test_key", api_secret="test_secret", test_type="ios_webrobot", 
+                            app_src=None, 
+                            test_src=None,
+                            url="www.yahoo.com",
+                            poll_every=0.1)
             result_code = client.main()
-            self.assertEqual(result_code, 1, "Main should execute and return error code with default timeout")
+            self.assertEqual(result_code, 3, "Main should execute and return error code with default timeout")
         finally:
             if old_env:
                 os.environ['APPURIFY_API_TIMEOUT'] = str(old_env)
@@ -555,9 +559,14 @@ class TestRun(unittest.TestCase):
     @mock.patch("requests.get", mockRequestGet)
     def testPollTimeoutCode(self):
         mockRequestGet.count = -20
-        client = AppurifyClient(access_token="authenticated", timeout_sec=0.2, poll_every=0.1)
+        client = AppurifyClient(api_key="test_key", api_secret="test_secret", test_type="ios_webrobot", 
+            app_src=None, 
+            test_src=None,
+            url="www.yahoo.com",
+            timeout_sec=0.2,
+            poll_every=0.1)
         result_code = client.main()
-        self.assertEqual(result_code, 1, "Main should execute and return error code")
+        self.assertEqual(result_code, 3, "Main should execute and return error code")
 
     @mock.patch("requests.post", mockRequestPost)
     @mock.patch("requests.get", mockRequestGet)
