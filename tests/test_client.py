@@ -307,6 +307,21 @@ def mockRequestGet(url, params, verify=False, headers={'User-Agent': 'MockUserAg
                                                 "test_config": "[uiautomation]\n\n[appurify]\nprofiler=1\npcap=1\n", 
                                                 "device_type": "58 - iPhone 5_NR / iOS 6.1.2", 
                                                 "device_type_id": 58}})
+        elif mockRequestGet.exception:
+            mockRequestGet.count = mockRequestGet.count + 1
+            return mockRequestObj({"meta": {"code": 200}, 
+                                   "response": {"status": "complete", 
+                                                "detailed_status": "exception", 
+                                                "results": {"exception": "-9999: Other exception", 
+                                                            "errors": None, 
+                                                            "url": "http://localhost/resource/tests/result/?run_id=dummy_test_run_id", 
+                                                            "number_passes": mockRequestGet.passes, 
+                                                            "number_fails": mockRequestGet.fails, 
+                                                            "pass": mockRequestGet.pass_val, 
+                                                            "output": ""}, 
+                                                "test_run_id": "test_test_run_id", 
+                                                "device_type": "58 - iPhone 5_NR / iOS 6.1.2",
+                                                "device_type_id": 58}})
         else:
             mockRequestGet.count = mockRequestGet.count + 1
             return mockRequestObj({"meta": {"code": 200}, 
@@ -325,7 +340,11 @@ def mockRequestGet(url, params, verify=False, headers={'User-Agent': 'MockUserAg
 mockRequestGet.count = 0
 mockRequestGet.passes = 1
 mockRequestGet.fails = 1
+mockRequestGet.exception = 0
 mockRequestGet.pass_val = False
+
+def mockRequestGetPrimaryException(url, params, verify=False, headers={'User-Agent': 'MockUserAgent'}):
+    raise Exception("Mock Syntax Error")
 
 class TestAuth(unittest.TestCase):
     def setUp(self):
@@ -439,17 +458,33 @@ class TestRun(unittest.TestCase):
 
     @mock.patch("requests.post", mockRequestPost)
     @mock.patch("requests.get", mockRequestGet)
-    def testMainFail(self):
+    def testMainServerException(self):
         mockRequestGet.count = 0
-        mockRequestGet.passes = 1
-        mockRequestGet.fails = 1
+        mockRequestGet.passes = 0
+        mockRequestGet.fails = 0
+        mockRequestGet.exception = 1
         mockRequestGet.pass_val = False
         client = AppurifyClient(api_key="test_key", api_secret="test_secret", test_type="uiautomation", 
                                 app_src=__file__, app_src_type='raw', 
                                 test_src=__file__, test_src_type='raw',
                                 timeout_sec=2, poll_every=0.1)
         result_code = client.main()
-        self.assertEqual(result_code, -1, "Main should execute and return fail code")
+        self.assertEqual(result_code, 7, "Main should execute and return exception code")
+
+    @mock.patch("requests.post", mockRequestPost)
+    @mock.patch("requests.get", mockRequestGet)
+    def testMainFail(self):
+        mockRequestGet.count = 0
+        mockRequestGet.passes = 1
+        mockRequestGet.fails = 1
+        mockRequestGet.exception = 0
+        mockRequestGet.pass_val = False
+        client = AppurifyClient(api_key="test_key", api_secret="test_secret", test_type="uiautomation", 
+                                app_src=__file__, app_src_type='raw', 
+                                test_src=__file__, test_src_type='raw',
+                                timeout_sec=2, poll_every=0.1)
+        result_code = client.main()
+        self.assertEqual(result_code, 1, "Main should execute and return fail code")
 
     @mock.patch("requests.post", mockRequestPost)
     @mock.patch("requests.get", mockRequestGet)
@@ -457,6 +492,7 @@ class TestRun(unittest.TestCase):
         mockRequestGet.count = 0
         mockRequestGet.passes = 2
         mockRequestGet.fails = 0
+        mockRequestGet.exception = 0
         mockRequestGet.pass_val = True
         client = AppurifyClient(api_key="test_key", api_secret="test_secret", test_type="uiautomation", 
                                 app_src=__file__, app_src_type='raw', 
@@ -471,6 +507,7 @@ class TestRun(unittest.TestCase):
         mockRequestGet.count = 0
         mockRequestGet.passes = 2
         mockRequestGet.fails = 0
+        mockRequestGet.exception = 0
         mockRequestGet.pass_val = True
         client = AppurifyClient(api_key="test_key", api_secret="test_secret", test_type="ios_webrobot", 
                                 app_src=None, 
@@ -521,3 +558,11 @@ class TestRun(unittest.TestCase):
         client = AppurifyClient(access_token="authenticated", timeout_sec=0.2, poll_every=0.1)
         result_code = client.main()
         self.assertEqual(result_code, 1, "Main should execute and return error code")
+
+    @mock.patch("requests.post", mockRequestPost)
+    @mock.patch("requests.get", mockRequestGet)
+    def testGetExceptionExitCode(self):
+        mockRequestGet.count = -20
+        client = AppurifyClient(access_token="authenticated", timeout_sec=0.2, poll_every=0.1)
+        self.assertEqual(client.getExceptionExitCode([{"exception": "4007: Error installing the app: file does not contain AndroidManifest.xml\n (1)"}]), 5, "Should return correct exit code for matching exception")
+        self.assertEqual(client.getExceptionExitCode([{"exception": "-9999: no match anything"}]), 7, "Should return correct exit code for no exception")
