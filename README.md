@@ -38,11 +38,30 @@ In Jenkins create a new Execute Shell build step and upload your app using the P
 
 ![Jenkins Integration](https://raw.github.com/appurify/appurify-python/master/jenkins.png)
 
+### Exit codes
+
+To facilitate error reporting, the client will report one of the following error codes on exit:
+
+|Code| Meaning |
+|----|---------|
+| 0  | Test completed with no exceptions or errors |
+| 1  | Test completed normally but reported test failures |
+| 2  | Test was aborted by the user or system |
+| 3  | Test was aborted by the system because of timeout |
+| 4  | Test could not be completed because the device could not be activated or reserved |
+| 5  | Test could not execute because there was an error in the configuration or uploaded files |
+| 6  | Test could not execute because the server rejected the provided credentials|
+| 7  | Test could not execute because of other server/remote exception |
+| 8  | Test could not execute because of an unexpected error in the client |
+
 ### Contribution
 
 Found a bug or want to add a much needed feature?  Go for it and just send us the Pull Request!
 
 ## Release Notes
+
+### 0.3.4
+- Add exit codes
 
 ### 0.2.9
 - Handle case where test results may not immediately be ready for download after a test completes.
