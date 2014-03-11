@@ -415,7 +415,7 @@ class AppurifyClient():
             exit_code = 1
         except Exception, e:
             log(str(e))
-            exit_code = 1
+            exit_code = constants.EXIT_CODE_CLIENT_EXCEPTION
 
         log('done with exit code %s' % exit_code)
         return exit_code
