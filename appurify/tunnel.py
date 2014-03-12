@@ -600,40 +600,41 @@ class Tunnel(object):
         else:
             log("Neither --pid nor --pid-file point to a PID")
 
-def init():
-    parser = argparse.ArgumentParser(
-        description='Appurify developer tunnel client v%s' % constants.__version__,
-        epilog='Email us at %s for further information' % constants.__contact__
-    )
-
-    parser.add_argument('--api-key', help='Appurify developer key')
-    parser.add_argument('--api-secret', help='Appurify developer secret')
-    parser.add_argument('--username', help='Appurify username')
-    parser.add_argument('--password', help='Appurify password')
-    parser.add_argument('--pid-file', help='Save pid to file')
-    parser.add_argument('--daemon', action='store_true', help='Run in background (supported only on *nix systems)')
-    parser.add_argument('--pid', help='Tunnel session pid to terminate')
-    parser.add_argument('--terminate', action='store_true', help='Terminate process identified by --pid-file or --pid and shutdown')
-    args = parser.parse_args()
-
-    if args.terminate:
-        Tunnel.terminate(args.pid, args.pid_file)
-        sys.exit(0)
-
-    if (args.api_key == None or args.api_secret == None) and \
-    (args.username == None or args.password == None):
-        parser.error('--api-key and --api-secret OR --username and --password is required')
-
-    Tunnel.pidfile = args.pid_file
-    Tunnel.daemon = args.daemon
-    Tunnel.credentials = dict()
-
-    if args.api_key and args.api_secret:
-        Tunnel.credentials['key'], Tunnel.credentials['secret'] = args.api_key, args.api_secret
-    else:
-        Tunnel.credentials['username'], Tunnel.credentials['password'] = args.username, args.password
-
-    Tunnel.run()
+    @staticmethod
+    def cli():
+        parser = argparse.ArgumentParser(
+            description='Appurify developer tunnel client v%s' % constants.__version__,
+            epilog='Email us at %s for further information' % constants.__contact__
+        )
+    
+        parser.add_argument('--api-key', help='Appurify developer key')
+        parser.add_argument('--api-secret', help='Appurify developer secret')
+        parser.add_argument('--username', help='Appurify username')
+        parser.add_argument('--password', help='Appurify password')
+        parser.add_argument('--pid-file', help='Save pid to file')
+        parser.add_argument('--daemon', action='store_true', help='Run in background (supported only on *nix systems)')
+        parser.add_argument('--pid', help='Tunnel session pid to terminate')
+        parser.add_argument('--terminate', action='store_true', help='Terminate process identified by --pid-file or --pid and shutdown')
+        args = parser.parse_args()
+    
+        if args.terminate:
+            Tunnel.terminate(args.pid, args.pid_file)
+            sys.exit(0)
+    
+        if (args.api_key == None or args.api_secret == None) and \
+        (args.username == None or args.password == None):
+            parser.error('--api-key and --api-secret OR --username and --password is required')
+    
+        Tunnel.pidfile = args.pid_file
+        Tunnel.daemon = args.daemon
+        Tunnel.credentials = dict()
+    
+        if args.api_key and args.api_secret:
+            Tunnel.credentials['key'], Tunnel.credentials['secret'] = args.api_key, args.api_secret
+        else:
+            Tunnel.credentials['username'], Tunnel.credentials['password'] = args.username, args.password
+    
+        Tunnel.run()
 
 if __name__ == '__main__':
-    init()
+    Tunnel.cli()

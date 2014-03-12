@@ -25,6 +25,7 @@ __homepage__ = 'http://appurify.com'
 __license__ = 'Commercial'
 __description__ = 'Appurify Developer Python Client'
 __contact__ = "support@appurify.com"
+__repourl__ = 'http://github.com/appurify/appurify-python'
 
 API_PROTO = "https"             # override using APPURIFY_API_PROTO environment variable
 API_HOST = "live.appurify.com"  # APPURIFY_API_HOST
@@ -36,12 +37,12 @@ API_RETRY_ON_FAILURE = 1        # should client retry API calls in case of non-2
 API_RETRY_DELAY = 1             # (in seconds) if retry on failure is enabled, interval between each retry (APPURIFY_API_RETRY_DELAY)
 API_MAX_RETRY = 3               # if retry on failure is enabled, how many times should client retry (APPURIFY_API_MAX_RETRY)
 
-API_STATUS_BASE_URL = 'https://s3-us-west-1.amazonaws.com/appurify-api-status'
-API_STATUS_UP = 1               # aws status page says service is up
+API_STATUS_UP = 1               # aws status page code for service up and running
 API_STATUS_DOWN = 2             # service is down
-API_WAIT_FOR_SERVICE = 1
+API_WAIT_FOR_SERVICE = 1        # should client wait for service to come back live by polling aws status page?
+API_STATUS_BASE_URL = 'https://s3-us-west-1.amazonaws.com/appurify-api-status'
 
-MAX_DOWNLOAD_RETRIES = 10       # Number of times it will try (with increasing wait times) to download results before giving up
+MAX_DOWNLOAD_RETRIES = 10       # Number of times client should try to download the test results before giving up
 
 SUPPORTED_TEST_TYPES = [
     'calabash',
@@ -73,10 +74,32 @@ SUPPORTED_TEST_TYPES = [
     'espresso'
 ]
 
-NO_TEST_SOURCE = ['ios_robot', 'ios_webrobot', 'browser_test', 'kif', 'kif:google', 'network_headers', 'ios_sencharobot', 'ios_webviewrobot', 'ios_wpt', 'touch_test', 'android_robot']
-NO_APP_SOURCE = ['ios_selenium','android_selenium','ios_webrobot', 'browser_test', 'network_headers', 'ios_webviewrobot', 'ios_wpt', 'appium']
+NO_TEST_SOURCE = [
+    'ios_robot', 
+    'ios_webrobot', 
+    'browser_test', 
+    'kif', 
+    'kif:google', 
+    'network_headers', 
+    'ios_sencharobot', 
+    'ios_webviewrobot', 
+    'ios_wpt', 
+    'touch_test', 
+    'android_robot',
+]
 
-SUPPORTED_ACTIONS = [
+NO_APP_SOURCE = [
+    'ios_selenium',
+    'android_selenium',
+    'ios_webrobot',
+    'browser_test',
+    'network_headers',
+    'ios_webviewrobot',
+    'ios_wpt',
+    'appium',
+]
+
+ENABLED_ACTIONS = [
     'access_token_generate',
     'access_token_list',
     'access_token_usage',
