@@ -23,24 +23,33 @@ appurify-client.py --api-key $API_KEY --api-secret $API_SECRET \
 --device-type-id $DEVICE_TYPE_IDS --result-dir $RESULT_DIR
 ```
 
+### Starting Tunnel
+
+```
+appurify-tunnel.py --api-key $API_KEY --api-secret $API_SECRET
+```
+
+To provide local/private network environment to your tests, they must be started after tunnel has been established.
+
 ### Parameters
 
-- `API-KEY`: Used for authentication
-- `API-SECRET`: Used for authentication
-- `APP-SRC`: The path or URL to the app binary (.ipa or .apk)
+- `API_KEY`: Used for authentication
+- `API_SECRET`: Used for authentication
+- `APP_SRC`: The path or URL to the app binary (.ipa or .apk)
 - `TEST_SRC`: The path or URL where the test files are located
-- `TEST_TYPE`: Your test framework name (i.e. calabash, ios_robot, ocunit, uiautomation)
+- `TEST_TYPE`: Your test framework name e.g. calabash, ios_robot, ocunit, uiautomation. See [constants.py](https://github.com/appurify/appurify-python/blob/master/appurify/constants.py#L63) for list of supported test types.
 - `DEVICE_TYPE_IDS`: A comma separated list of numbers representing the device type IDs you wish to use for your test
 - `RESULT_DIR`: The directory on your local machine where you want your results to be written.
 
 ### Jenkins Integration
+
 In Jenkins create a new Execute Shell build step and upload your app using the Python wrapper as pictured below.
 
 ![Jenkins Integration](https://raw.github.com/appurify/appurify-python/master/jenkins.png)
 
 ### Contribution
 
-Found a bug or want to add a much needed feature?  Go for it and just send us the Pull Request!
+Found a bug or want to add a much needed feature? Go for it and send us the Pull Request!
 
 ## Release Notes
 
