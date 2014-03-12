@@ -324,6 +324,7 @@ class AppurifyClient(object):
 
         parser.add_argument('--api-key', help='Appurify developer key')
         parser.add_argument('--api-secret', help='Appurify developer secret')
+        parser.add_argument('--access-token-tag', action='append', help='colon separated key:value tag for access_token to be generated')
         parser.add_argument('--access-token', help='Use an existing access token instead of generating a new one')
 
         parser.add_argument('--app-src', help='Path or Url of app file to upload')
