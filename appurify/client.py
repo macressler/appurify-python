@@ -348,6 +348,8 @@ class AppurifyClient():
         raise AppurifyClientError("Test result poll timed out after %s seconds" % timeout_limit, exit_code=constants.EXIT_CODE_TEST_TIMEOUT)
 
     def reportTestResult(self, test_status_response):
+        log("== reportTestResult ==")
+        log(json.dumps(test_status_response))
         exit_code = constants.EXIT_CODE_ALL_PASS
         test_response = test_status_response['results']
         result_dir = self.args.get('result_dir', None)
@@ -361,8 +363,11 @@ class AppurifyClient():
             if result_dir:
                 result_url = test_response['url']
                 download_test_response(result_url, result_dir, self.verify_ssl)
-        if test_status_response.get('detailed_status') == "exception":
+        detailed_status = test_status_response.get('detailed_status')
+        if detailed_status == "exception":
             exit_code = self.getExceptionExitCode(test_response)
+        elif detailed_status == "timeout":
+            exit_code = constants.EXIT_CODE_TEST_TIMEOUT
         else:
             if not response_pass:
                 exit_code = constants.EXIT_CODE_TEST_FAILURE
