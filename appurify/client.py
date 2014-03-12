@@ -345,8 +345,8 @@ class AppurifyClient(object):
         parser.add_argument('--name', help='Optional, the name of the app to display')
         parser.add_argument('--url', help='If the app being tested is a web application, url of the web application')
 
-        parser.add_argument('--disable-ssl-check', help="Optional, if set, don't verify SSL certificates (ie if you're using self-signed certs)", action="store_true")
-        parser.add_argument('--timeout', help='Optional, timeout in seconds before the client assumes the test has failed. Defaults to server timeout value (approx 3 hours)')
+        parser.add_argument('--disable-ssl-check', help="Optional, if set, don't verify SSL certificates (e.g. if you're using self-signed certificates)", action="store_true")
+        parser.add_argument('--timeout', help='Optional, timeout in seconds before the client assumes the test has failed. Defaults to server side timeout value (~ 6 hours)')
         parser.add_argument('--version', help='Print client version and exit', action='store_true')
 
         kwargs = {}
