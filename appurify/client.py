@@ -17,11 +17,14 @@ import pprint
 import inspect
 
 from . import constants
+
 from .utils import log, wget
 from .api import *
 
 class AppurifyClientError(Exception):
-    pass
+    def __init__(self, message, exit_code=constants.EXIT_CODE_CLIENT_EXCEPTION):
+        super(AppurifyClientError, self).__init__(message)
+        self.exit_code = exit_code
 
 class AppurifyClient(object):
 
@@ -49,7 +52,7 @@ class AppurifyClient(object):
             api_key = self.args.get('api_key', None)
             api_secret = self.args.get('api_secret',None)
             if api_key is None or api_secret is None:
-                raise AppurifyClientError("Either access_token or api_key and api_secret are required parameters")
+                raise AppurifyClientError("Either access_token or api_key and api_secret are required parameters", exit_code=constants.EXIT_CODE_BAD_TEST)
             log('generating access token...')
             r = access_token_generate(api_key, api_secret)
             if r.status_code == 200:
@@ -57,7 +60,7 @@ class AppurifyClient(object):
                 log('access_token_generate success, access_token:%s' % access_token)
                 self.access_token = access_token
             else:
-                raise AppurifyClientError('access_token_generate failed with response %s' % r.text)
+                raise AppurifyClientError('access_token_generate failed with response %s' % r.text, exit_code=constants.EXIT_CODE_AUTH_FAILURE)
         return self.access_token
 
     def uploadApp(self):
@@ -73,7 +76,7 @@ class AppurifyClient(object):
             r = apps_upload(self.access_token, None, 'url', self.test_type, name=app_name, webapp_url=webapp_url)
         else:
             if app_src is None:
-                raise AppurifyClientError("app src is required for test type %s" % self.test_type)
+                raise AppurifyClientError("app src is required for test type %s" % self.test_type, exit_code=constants.EXIT_CODE_BAD_TEST)
             if app_src_type != 'url':
                 with open(app_src, 'rb') as app_file_source:
                     r = apps_upload(self.access_token, app_file_source, app_src_type, app_src_type, app_name)
@@ -84,14 +87,14 @@ class AppurifyClient(object):
             log('apps_upload success, app_id:%s' % app_id)
             return app_id
         else:
-            raise AppurifyClientError('apps_upload failed with response %s' % r.text)
+            raise AppurifyClientError('apps_upload failed with response %s' % r.text, exit_code=constants.EXIT_CODE_BAD_TEST)
 
     def uploadTest(self, app_id):
         log('uploading test file...')
         test_src_type = self.args.get('test_src_type', None)
         test_src = self.args.get('test_src', None)
         if not test_src and self.test_type not in constants.NO_TEST_SOURCE:
-            raise AppurifyClientError('test_type %s requires a test source' % self.test_type)
+            raise AppurifyClientError('test_type %s requires a test source' % self.test_type, exit_code=constants.EXIT_CODE_BAD_TEST)
         if test_src:
             if test_src_type != 'url':
                 with open(test_src, 'rb') as test_file_source:
@@ -105,7 +108,7 @@ class AppurifyClient(object):
             log('tests_upload success, test_id:%s' % test_id)
             return test_id
         else:
-            raise AppurifyClientError('tests_upload failed with response %s' % r.text)
+            raise AppurifyClientError('tests_upload failed with response %s' % r.text, exit_code=constants.EXIT_CODE_OTHER_EXCEPTION)
 
     def uploadConfig(self, test_id, config_src):
         log('uploading config file...')
@@ -116,7 +119,7 @@ class AppurifyClient(object):
                 config_id = r.json()['response']['config_id']
                 return config_id
             else:
-                raise AppurifyClientError('config file upload  failed with response %s' % r.text)
+                raise AppurifyClientError('config file upload  failed with response %s' % r.text, exit_code=constants.EXIT_CODE_BAD_TEST)
 
     def runTest(self, app_id, test_id):
         r = tests_run(self.access_token, self.device_type_id, app_id, test_id, self.device_id)
@@ -135,7 +138,7 @@ class AppurifyClient(object):
 
             return (test_run_id, test_response['queue_timeout_limit'] if 'queue_timeout_limit' in test_response else self.timeout, configs)
         else:
-            raise AppurifyClientError('runTest failed scheduling test with response %s' % r.text)
+            raise AppurifyClientError('runTest failed scheduling test with response %s' % r.text, exit_code=constants.EXIT_CODE_OTHER_EXCEPTION)
 
     def abortTest(self, test_run_id, reason):
         r = tests_abort(self.access_token, test_run_id, reason)
@@ -183,27 +186,45 @@ class AppurifyClient(object):
                 log("Test progress: {}".format(test_status_response.get('detailed_status', 'status-unavailable')))
             runtime = runtime + self.poll_every
 
-        raise AppurifyClientError("Test result poll timed out after %s seconds" % timeout_limit)
+        raise AppurifyClientError("Test result poll timed out after %s seconds" % timeout_limit, exit_code=constants.EXIT_CODE_TEST_TIMEOUT)
 
     def reportTestResult(self, test_status_response):
+        log("== reportTestResult ==")
+        log(json.dumps(test_status_response))
+        exit_code = constants.EXIT_CODE_ALL_PASS
         test_response = test_status_response['results']
         result_dir = self.args.get('result_dir', None)
         if 'complete_count' in test_status_response:
-            self.print_multi_test_responses(test_response)
+            response_pass = self.print_multi_test_responses(test_response)
             if result_dir:
                 self.download_multi_test_response(test_response, result_dir, self.verify_ssl)
         else:
-            self.print_single_test_response(test_response)
+            response_pass = self.print_single_test_response(test_response)
+            test_response = [test_response] # make sure test response has the same format in both cases
             if result_dir:
                 result_url = test_response['url']
                 self.download_test_response(result_url, result_dir, self.verify_ssl)
-        if 'pass' in test_status_response:
-            all_pass = test_status_response['pass']
-        elif 'pass' in test_response:
-            all_pass = test_response['pass']
+        
+        detailed_status = test_status_response.get('detailed_status')
+        if detailed_status == "exception":
+            exit_code = self.getExceptionExitCode(test_response)
+        elif detailed_status == "timeout":
+            exit_code = constants.EXIT_CODE_TEST_TIMEOUT
         else:
-            all_pass = False
-        return all_pass
+            if not response_pass:
+                exit_code = constants.EXIT_CODE_TEST_FAILURE
+        return exit_code
+
+    def getExceptionExitCode(self, test_response):
+        exit_code = constants.EXIT_CODE_OTHER_EXCEPTION
+        for response in test_response:
+            exception = response.get("exception", False)
+            if exception:
+                exception_code = exception.split(":")[0]
+                for key in constants.EXIT_CODE_EXCEPTION_MAP:
+                    if int(exception_code) in constants.EXIT_CODE_EXCEPTION_MAP[key]:
+                        return key
+        return exit_code
 
     @staticmethod
     def print_single_test_response(test_response):
@@ -264,9 +285,7 @@ class AppurifyClient(object):
     
     def main(self):
         """
-        Returns 0 if all tests run with no errors
-        Returns -1 if there were test errors
-        Returns 1 if tests failed because of a script or server fault
+        See constants for return codes
         """
         exit_code = 0
 
@@ -291,17 +310,17 @@ class AppurifyClient(object):
             self.timeout = self.timeout or queue_timeout_limit
             # poll for results and print report
             test_status_response = self.pollTestResult(test_run_id, self.timeout)
-            all_pass = self.reportTestResult(test_status_response)
-            
-            if not all_pass:
-                exit_code = -1
-        except KeyboardInterrupt, e:
-            response = self.abortTest(test_run_id, repr(e))
+            exit_code = self.reportTestResult(test_status_response)
+        except AppurifyClientError, e:
             log(str(e))
-            exit_code = 1
+            exit_code = e.exit_code
+        except KeyboardInterrupt, e:
+            self.abortTest(test_run_id, repr(e))
+            log(str(e))
+            exit_code = constants.EXIT_CODE_TEST_ABORT
         except Exception, e:
             log(str(e))
-            exit_code = 1
+            exit_code = constants.EXIT_CODE_CLIENT_EXCEPTION
 
         log('done with exit code %s' % exit_code)
         return exit_code

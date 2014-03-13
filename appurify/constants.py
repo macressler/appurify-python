@@ -44,6 +44,23 @@ API_STATUS_BASE_URL = 'https://s3-us-west-1.amazonaws.com/appurify-api-status'
 
 MAX_DOWNLOAD_RETRIES = 10       # Number of times client should try to download the test results before giving up
 
+# Exit codes
+EXIT_CODE_ALL_PASS = 0          # Test completed with no exceptions or errors
+EXIT_CODE_TEST_FAILURE = 1      # Test completed normally but reported test failures
+EXIT_CODE_TEST_ABORT = 2        # Test was aborted by the user or system
+EXIT_CODE_TEST_TIMEOUT = 3      # Test was aborted by the system because of timeout
+EXIT_CODE_DEVICE_FAILURE = 4    # Test could not be completed because the device could not be activated or reserved
+EXIT_CODE_BAD_TEST = 5          # Test could not execute because there was an error in the configuration or uploaded files
+EXIT_CODE_AUTH_FAILURE = 6      # Test could not execute because the server rejected the provided credentials (key/secret)
+EXIT_CODE_OTHER_EXCEPTION = 7   # Test could not execute because of other server/remote exception
+EXIT_CODE_CLIENT_EXCEPTION = 8  # Test could not execute because of an unexpected error in the client
+
+# TODO: Probably should be fetching these from the server at some point
+EXIT_CODE_EXCEPTION_MAP = {EXIT_CODE_TEST_ABORT : [4000, 5000],
+                          EXIT_CODE_TEST_TIMEOUT : [4001, 4002, 4003, 1010],
+                          EXIT_CODE_DEVICE_FAILURE: [1000, 1001, 1002, 1005, 1008, 1009, 1011, 1012, 1013, 1014],
+                          EXIT_CODE_BAD_TEST: [1003, 1006, 1007, 1008, 3000, 3001, 3003, 3004, 4005, 4006, 4007, 4008, 4009]}
+
 SUPPORTED_TEST_TYPES = [
     'calabash',
     'ocunit',
