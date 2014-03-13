@@ -191,9 +191,11 @@ class AppurifyClient(object):
     def reportTestResult(self, test_status_response):
         log("== reportTestResult ==")
         log(json.dumps(test_status_response))
+        
         exit_code = constants.EXIT_CODE_ALL_PASS
         test_response = test_status_response['results']
         result_dir = self.args.get('result_dir', None)
+        
         if 'complete_count' in test_status_response:
             response_pass = self.print_multi_test_responses(test_response)
             if result_dir:
@@ -203,7 +205,7 @@ class AppurifyClient(object):
             test_response = [test_response] # make sure test response has the same format in both cases
             if result_dir:
                 result_url = test_response['url']
-                self.download_test_response(result_url, result_dir, self.verify_ssl)
+                download_test_response(result_url, result_dir, self.verify_ssl)
         
         detailed_status = test_status_response.get('detailed_status')
         if detailed_status == "exception":
@@ -213,6 +215,7 @@ class AppurifyClient(object):
         else:
             if not response_pass:
                 exit_code = constants.EXIT_CODE_TEST_FAILURE
+        
         return exit_code
 
     def getExceptionExitCode(self, test_response):
@@ -242,6 +245,7 @@ class AppurifyClient(object):
     
             results_url = test_response['url']
             log("Detailed results url: %s" % results_url)
+            return response_pass
         except Exception as e:
             log("Error printing test results: %r" % e)
     
@@ -267,10 +271,12 @@ class AppurifyClient(object):
     
     @staticmethod
     def print_multi_test_responses(test_response):
+        response_pass = True
         for result in test_response:
             log("Device Type %s result:" % result['device_type'])
             self.print_single_test_response(result["results"])
             log("\n")
+        return response_pass
     
     @staticmethod
     def download_multi_test_response(test_response, result_dir, verify=True):
@@ -311,13 +317,16 @@ class AppurifyClient(object):
             # poll for results and print report
             test_status_response = self.pollTestResult(test_run_id, self.timeout)
             exit_code = self.reportTestResult(test_status_response)
+        
         except AppurifyClientError, e:
             log(str(e))
             exit_code = e.exit_code
+        
         except KeyboardInterrupt, e:
             self.abortTest(test_run_id, repr(e))
             log(str(e))
             exit_code = constants.EXIT_CODE_TEST_ABORT
+        
         except Exception, e:
             log(str(e))
             exit_code = constants.EXIT_CODE_CLIENT_EXCEPTION
