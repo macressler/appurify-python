@@ -14,3 +14,4 @@ cover/
 .project
 .pydevproject
 build/
+dist/*.egg
