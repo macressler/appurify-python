@@ -358,10 +358,11 @@ class AppurifyClient():
             if result_dir:
                 download_multi_test_response(test_response, result_dir, self.verify_ssl)
         else:
-            response_pass =print_single_test_response(test_response)
+            response_pass = print_single_test_response(test_response)
             test_response = [test_response] # make sure test response has the same format in both cases
+
             if result_dir:
-                result_url = test_response['url']
+                result_url = test_response[0]['url']
                 download_test_response(result_url, result_dir, self.verify_ssl)
         detailed_status = test_status_response.get('detailed_status')
         if detailed_status == "exception":
@@ -419,9 +420,11 @@ class AppurifyClient():
             self.abortTest(test_run_id, repr(e))
             log(str(e))
             exit_code = constants.EXIT_CODE_TEST_ABORT
+        """
         except Exception, e:
             log(str(e))
             exit_code = constants.EXIT_CODE_CLIENT_EXCEPTION
+        """
 
         log('done with exit code %s' % exit_code)
         return exit_code
