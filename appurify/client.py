@@ -17,175 +17,16 @@ import pprint
 import inspect
 
 from . import constants
-from .utils import log, get, post, wget
 
-####################
-## Access Token API
-####################
-
-def access_token_generate(api_key, api_secret, access_token_tag=None):
-    """Generate an access token, given an api key and secret"""
-    data = {'key': api_key, 'secret': api_secret}
-    if type(access_token_tag) == list: data['tags'] = access_token_tag
-    return post('access_token/generate', data)
-
-def access_token_list(api_key, api_secret, page_no=1, page_size=10):
-    """Retrieve a list of access tokens for a particular key/secret pair"""
-    return get('access_token/list', {'key':api_key, 'secret':api_secret, 'page_no':page_no, 'page_size':page_size})
-
-def access_token_usage(api_key, api_secret, access_token, page_no=1, page_size=10):
-    """ DEPRECATED. Will be removed in future versions.
-    Get details on device time used for a particular key/secret pair
-    """
-    return get('access_token/usage', {'key':api_key, 'secret':api_secret, 'access_token':access_token, 'page_no':page_no, 'page_size':page_size})
-
-def access_token_validate(access_token):
-    """Verify that an access token is valid and retrieve the remaining ttl for that token"""
-    return post('access_token/validate', {'access_token':access_token})
-
-def access_token_revoke(access_token):
-    """Revoke access token."""
-    return post('access_token/revoke', {'access_token':access_token})
-
-##############
-## Device API
-##############
-
-def devices_list(access_token):
-    """Get list of devices"""
-    return get('devices/list', {'access_token':access_token})
-
-def devices_config_list(access_token):
-    """Get available configuration option for devices"""
-    return get('devices/config/list', {'access_token':access_token})
-
-# TODO: access configuration parameters and pass it on
-def devices_config(access_token, device_id):
-    """Fetch configuration of specific device id"""
-    return post('devices/config', {'access_token':access_token, 'device_id':device_id})
-
-def devices_config_networks_list(access_token):
-    return get('devices/config/networks/list', {'access_token':access_token})
-
-###########
-## App API
-###########
-
-def apps_list(access_token):
-    return get('apps/list', {'access_token':access_token})
-
-def apps_upload(access_token, source, source_type, type=None, name=None, webapp_url=None):
-    files = None if source_type == 'url' else {'source':source}
-    data = {'access_token':access_token, 'source_type':source_type}
-    if source_type == 'url': data['source'] = source
-    if type: data['app_test_type'] = type
-    if name: data['name'] = name
-    if webapp_url: data['url'] = webapp_url
-    return post('apps/upload', data, files)
-
-############
-## Test API
-############
-
-def tests_list(access_token):
-    return get('tests/list', {'access_token':access_token})
-
-def tests_upload(access_token, test_source, test_source_type, test_type, app_id = None):
-    files = None if test_source_type == 'url' else {'source':test_source}
-    data = {'access_token':access_token, 'source_type':test_source_type, 'test_type': test_type}
-    if app_id:
-        data['app_id'] = app_id
-    if test_source_type == 'url': data['source'] = test_source
-    return post('tests/upload', data, files)
-
-def tests_run(access_token, device_type_id, app_id, test_id, device_id=None):
-    return post('tests/run', {'access_token':access_token, 'device_type_id':device_type_id, 'app_id':app_id, 'test_id':test_id, 'device_id':device_id, 'async': '1'})
-
-def tests_check_result(access_token, test_run_id):
-    return get('tests/check', {'access_token':access_token, 'test_run_id': test_run_id})
-
-def tests_abort(access_token, test_run_id, reason='Not specified.'):
-    return post('tests/abort', {'access_token':access_token, 'test_run_id': test_run_id, 'reason':reason})
-
-###################
-## Config file API
-###################
-
-def config_upload(access_token, config_src, test_id):
-    """Upload a configuration file to associate with a test."""
-    data, files = {'access_token':access_token, 'test_id': test_id}, {'source':config_src}
-    return post('tests/config/upload', data, files)
-
-##########################
-## Post processing
-##########################
-
-def print_single_test_response(test_response):
-    try:
-        for response_type in ['output', 'errors', 'exception', 'number_passes', 'number_fails']:
-            response_text = test_response[response_type] or None
-            response_text = None if type(response_text) in ('unicode', 'str') and response_text.strip() == '' else response_text
-            log("Test %s: %s" % (response_type, response_text))
-
-        response_pass = test_response['pass']
-        if response_pass:
-            log("All tests passed!")
-        else:
-            log("There were test failures")
-
-        results_url = test_response['url']
-        log("Detailed results url: %s" % results_url)
-        return response_pass
-    except Exception as e:
-        log("Error printing test results: %r" % e)
-
-def download_test_response(results_url, result_dir, verify=True):
-    try:
-        if not os.path.exists(result_dir):
-            log("Attempting to create directory %s" % result_dir)
-            os.makedirs(result_dir)
-        if result_dir:
-            result_path = result_dir + '/' + 'results.zip'
-            log("Saving results to %s" % result_path)
-            try_count = 1
-            status_code = 0
-            while try_count <= constants.MAX_DOWNLOAD_RETRIES and status_code != 200:
-                time.sleep(try_count)
-                status_code = wget(results_url, result_path, verify)
-                try_count = try_count + 1
-            if try_count > constants.MAX_DOWNLOAD_RETRIES:
-                log("Error downloading url %s, failed after 5 retries" % results_url)
-    except Exception as e:
-        log("Error downloading test result file: %s" % e)
-
-def print_multi_test_responses(test_response):
-    response_pass = True
-    for result in test_response:
-        log("Device Type %s result:" % result['device_type'])
-        response_pass = response_pass and print_single_test_response(result["results"])
-        log("\n")
-    return response_pass
-
-def download_multi_test_response(test_response, result_dir, verify=True):
-    for result in test_response:
-        try:
-            result_url = result['results']['url']
-            device_type_id = result['device_type_id']
-            device_result_path = result_dir + "/device_type_%s" % device_type_id
-            download_test_response(result_url, device_result_path, verify)
-        except Exception as e:
-            log("Error downloading test response: %s" % e)
-
-##########################
-## Command line utilities
-##########################
+from .utils import log, wget
+from .api import *
 
 class AppurifyClientError(Exception):
     def __init__(self, message, exit_code=constants.EXIT_CODE_CLIENT_EXCEPTION):
         super(AppurifyClientError, self).__init__(message)
         self.exit_code = exit_code
 
-class AppurifyClient():
+class AppurifyClient(object):
 
     def __init__(self, *args, **kwargs):
         self.args = kwargs
@@ -350,20 +191,23 @@ class AppurifyClient():
     def reportTestResult(self, test_status_response):
         log("== reportTestResult ==")
         log(json.dumps(test_status_response))
+        
         exit_code = constants.EXIT_CODE_ALL_PASS
         test_response = test_status_response['results']
         result_dir = self.args.get('result_dir', None)
+        
         if 'complete_count' in test_status_response:
-            response_pass = print_multi_test_responses(test_response)
+            response_pass = self.print_multi_test_responses(test_response)
             if result_dir:
-                download_multi_test_response(test_response, result_dir, self.verify_ssl)
+                self.download_multi_test_response(test_response, result_dir, self.verify_ssl)
         else:
-            response_pass = print_single_test_response(test_response)
+            response_pass = self.print_single_test_response(test_response)
             test_response = [test_response] # make sure test response has the same format in both cases
 
             if result_dir:
                 result_url = test_response[0]['url']
                 download_test_response(result_url, result_dir, self.verify_ssl)
+        
         detailed_status = test_status_response.get('detailed_status')
         if detailed_status == "exception":
             exit_code = self.getExceptionExitCode(test_response)
@@ -372,6 +216,7 @@ class AppurifyClient():
         else:
             if not response_pass:
                 exit_code = constants.EXIT_CODE_TEST_FAILURE
+        
         return exit_code
 
     def getExceptionExitCode(self, test_response):
@@ -385,6 +230,66 @@ class AppurifyClient():
                         return key
         return exit_code
 
+    @staticmethod
+    def print_single_test_response(test_response):
+        try:
+            for response_type in ['output', 'errors', 'exception', 'number_passes', 'number_fails']:
+                response_text = test_response[response_type] or None
+                response_text = None if type(response_text) in ('unicode', 'str') and response_text.strip() == '' else response_text
+                log("Test %s: %s" % (response_type, response_text))
+    
+            response_pass = test_response['pass']
+            if response_pass:
+                log("All tests passed!")
+            else:
+                log("There were test failures")
+    
+            results_url = test_response['url']
+            log("Detailed results url: %s" % results_url)
+            return response_pass
+        except Exception as e:
+            log("Error printing test results: %r" % e)
+    
+    @staticmethod
+    def download_test_response(results_url, result_dir, verify=True):
+        try:
+            if not os.path.exists(result_dir):
+                log("Attempting to create directory %s" % result_dir)
+                os.makedirs(result_dir)
+            if result_dir:
+                result_path = result_dir + '/' + 'results.zip'
+                log("Saving results to %s" % result_path)
+                try_count = 1
+                status_code = 0
+                while try_count <= constants.MAX_DOWNLOAD_RETRIES and status_code != 200:
+                    time.sleep(try_count)
+                    status_code = wget(results_url, result_path, verify)
+                    try_count = try_count + 1
+                if try_count > constants.MAX_DOWNLOAD_RETRIES:
+                    log("Error downloading url %s, failed after 5 retries" % results_url)
+        except Exception as e:
+            log("Error downloading test result file: %s" % e)
+    
+    @staticmethod
+    def print_multi_test_responses(test_response):
+        response_pass = True
+        for result in test_response:
+            log("Device Type %s result:" % result['device_type'])
+            self.print_single_test_response(result["results"])
+            log("\n")
+        return response_pass
+    
+    @staticmethod
+    def download_multi_test_response(test_response, result_dir, verify=True):
+        for result in test_response:
+            try:
+                result_url = result['results']['url']
+                device_type_id = result['device_type_id']
+                device_result_path = result_dir + "/device_type_%s" % device_type_id
+                self.download_test_response(result_url, device_result_path, verify)
+            except Exception as e:
+                log("Error downloading test response: %s" % e)
+    
     def main(self):
         """
         See constants for return codes
@@ -413,9 +318,11 @@ class AppurifyClient():
             # poll for results and print report
             test_status_response = self.pollTestResult(test_run_id, self.timeout)
             exit_code = self.reportTestResult(test_status_response)
+        
         except AppurifyClientError, e:
             log(str(e))
             exit_code = e.exit_code
+        
         except KeyboardInterrupt, e:
             self.abortTest(test_run_id, repr(e))
             log(str(e))
@@ -429,147 +336,147 @@ class AppurifyClient():
         log('done with exit code %s' % exit_code)
         return exit_code
 
-def execute(action, kwargs, required):
-    """Execute a particular action and prints received response."""
-    os.environ['APPURIFY_API_RETRY_ON_FAILURE'] = '0' #disable retries
-    pp = pprint.PrettyPrinter(indent=4)
-    r = globals()[action](**{k : v for k,v in kwargs.iteritems() if k in required})
-    pp.pprint(r.json())
-    return 0 if r.status_code == 200 else 1
+    @staticmethod
+    def execute(action, kwargs, required):
+        """Execute a particular action and prints received response."""
+        os.environ['APPURIFY_API_RETRY_ON_FAILURE'] = '0' #disable retries
+        pp = pprint.PrettyPrinter(indent=4)
+        r = globals()[action](**{k : v for k,v in kwargs.iteritems() if k in required})
+        pp.pprint(r.json())
+        return 0 if r.status_code == 200 else 1
 
-def init():
-    parser = argparse.ArgumentParser(
-        description='Appurify developer REST API client v%s' % constants.__version__,
-        epilog='Email us at %s for further information' % constants.__contact__
-    )
+    @staticmethod
+    def cli():
+        parser = argparse.ArgumentParser(
+            description='Appurify developer REST API client v%s' % constants.__version__,
+            epilog='Having difficulty using %s? Report at: %s/issues/new or email us at %s' % (constants.__description__, constants.__repourl__, constants.__contact__)
+        )
 
-    parser.add_argument('--api-key', help='Appurify developer key')
-    parser.add_argument('--api-secret', help='Appurify developer secret')
-    parser.add_argument('--access-token-tag', action='append', help='colon separated key:value tag for access_token to be generated')
-    parser.add_argument('--access-token', help='Specify to use this access token instead of generating a new one')
+        parser.add_argument('--api-key', help='Appurify developer key')
+        parser.add_argument('--api-secret', help='Appurify developer secret')
+        parser.add_argument('--access-token-tag', action='append', help='colon separated key:value tag for access_token to be generated')
+        parser.add_argument('--access-token', help='Use an existing access token instead of generating a new one')
 
-    parser.add_argument('--app-src', help='Path or Url of app file to upload')
-    parser.add_argument('--app-id', help='Specify to use previously uploaded app file')
+        parser.add_argument('--app-src', help='Path or Url of app file to upload')
+        parser.add_argument('--app-id', help='Specify to use previously uploaded app file')
 
-    parser.add_argument('--test-src', help='Path or Url of test file to upload')
-    parser.add_argument('--test-type', help='Type of test being uploaded')
-    parser.add_argument('--test-id', help='Specify to use previously uploaded test file')
-    parser.add_argument('--test-run-id', help='Specify test run id (required only while running tests_check_result action)')
+        parser.add_argument('--test-src', help='Path or Url of test file to upload')
+        parser.add_argument('--test-type', help='Type of test being uploaded')
+        parser.add_argument('--test-id', help='Specify to use previously uploaded test file')
+        parser.add_argument('--test-run-id', help='Specify test run id (required only while running tests_check_result action)')
 
-    parser.add_argument('--device-type-id', help='Device type to reserve and run tests upon (you may run tests on multiple devices by using a comma separated list of device IDs)')
-    parser.add_argument('--device-id', help='Specify to use a particular device')
+        parser.add_argument('--device-type-id', help='Device type to reserve and run tests upon (you may run tests on multiple devices by using a comma separated list of device IDs)')
+        parser.add_argument('--device-id', help='Specify to use a particular device')
 
-    parser.add_argument('--config-src', help='Path of additional configuration to add to test')
-    parser.add_argument('--result-dir', help='Path to save downloaded results to')
-    parser.add_argument('--action', help='Specific API to call (default: main)')
+        parser.add_argument('--config-src', help='Path of additional configuration to add to test')
+        parser.add_argument('--result-dir', help='Path to save downloaded results to')
+        parser.add_argument('--action', help='Specific API to call (default: main)')
 
-    parser.add_argument('--name', help='Optional, the name of the app to display')
-    parser.add_argument('--url', help='If the app being tested is a web application, url of the web application')
+        parser.add_argument('--name', help='Optional, the name of the app to display')
+        parser.add_argument('--url', help='If the app being tested is a web application, url of the web application')
 
-    parser.add_argument('--disable-ssl-check', help="Optional, if set, don't verify SSL certificates (ie if you're using self-signed certs)", action="store_true")
+        parser.add_argument('--disable-ssl-check', help="Optional, if set, don't verify SSL certificates (e.g. if you're using self-signed certificates)", action="store_true")
+        parser.add_argument('--timeout', help='Optional, timeout in seconds before the client assumes the test has failed. Defaults to server side timeout value (~ 6 hours)')
+        parser.add_argument('--version', help='Print client version and exit', action='store_true')
 
-    parser.add_argument('--timeout', help='Optional, timeout in seconds before the client assumes the test has failed. Defaults to server timeout value (approx 3 hours)')
+        kwargs = {}
+        args = parser.parse_args()
 
-    parser.add_argument('--version', help='Print client version and exit', action='store_true')
+        if args.version:
+            print(constants.__version__)
+            sys.exit(0)
 
-    kwargs = {}
-    args = parser.parse_args()
+        # (optional) when 'main' is the requested action
+        # (required) when 'devices_config' is the requested action
+        kwargs['device_id'] = args.device_id
 
-    if args.version:
-        print(constants.__version__)
-        sys.exit(0)
+        # (required) access_token || api_key && api_secret
+        # (optional) access_token_tag
+        if args.access_token == None and (args.api_key == None or args.api_secret == None):
+            parser.error('--access-token OR --api-key and --api-secret is required')
 
-    # (optional) when 'main' is the requested action
-    # (required) when 'devices_config' is the requested action
-    kwargs['device_id'] = args.device_id
+        kwargs['test_run_id'] = args.test_run_id
+        kwargs['api_key'] = args.api_key
+        kwargs['api_secret'] = args.api_secret
+        kwargs['access_token'] = args.access_token
+        kwargs['access_token_tag'] = args.access_token_tag
+        kwargs['disable_ssl_check'] = args.disable_ssl_check
 
-    # (required) access_token || api_key && api_secret
-    # (optional) access_token_tag
-    if args.access_token == None and (args.api_key == None or args.api_secret == None):
-        parser.error('--access-token OR --api-key and --api-secret is required')
+        # (optional)
+        if args.action:
+            if args.action in constants.ENABLED_ACTIONS:
+                argspec = inspect.getargspec(globals()[args.action])
+                required = argspec[0] if not argspec[3] else argspec[0][: -1 * len(argspec[3])]
+                for k in required:
+                    if not k in kwargs or not kwargs[k]:
+                        parser.error('"%s" action requires following parameters: %s. "%s" not found.' % (args.action, ", ".join(required), k))
+                sys.exit(AppurifyClient.execute(args.action, kwargs, required))
+            else:
+                parser.error('"%s" action is not supported. Available options are: %s' % (args.action, ", ".join(constants.ENABLED_ACTIONS)))
 
-    kwargs['test_run_id'] = args.test_run_id
-    kwargs['api_key'] = args.api_key
-    kwargs['api_secret'] = args.api_secret
-    kwargs['access_token'] = args.access_token
-    kwargs['access_token_tag'] = args.access_token_tag
-    kwargs['disable_ssl_check'] = args.disable_ssl_check
+        # (required) app_id || app_src
+        # (optional) app_test_type
+        # (calculated) app_src_type
+        if args.app_id is None and args.app_src is None and args.test_type not in constants.NO_APP_SOURCE:
+            parser.error('--app-id OR --app-src is required')
+    
+        kwargs['app_id'] = args.app_id
+        kwargs['app_src'] = args.app_src
+    
+        if args.app_src:
+            if args.app_src[0:4] == 'http':
+                kwargs['app_src_type'] = 'url'
+            else:
+                try:
+                    with open(args.app_src) as _: pass
+                    kwargs['app_src_type'] = 'raw'
+                except:
+                    parser.error('--app-src %s could not be found' % args.app_src)
+    
+        # (required) test_id || test_src && test_type
+        if args.test_id == None and (args.test_src == None or args.test_type == None) and args.test_type not in constants.NO_TEST_SOURCE:
+            parser.error('--test-id OR --test-src and --test-type is required')
+    
+        kwargs['test_id'] = args.test_id
+        kwargs['test_type'] = args.test_type
+        kwargs['test_src'] = args.test_src
+        if args.test_type not in constants.SUPPORTED_TEST_TYPES:
+            parser.error('--test-type must be one of the following: %s' % ', '.join(constants.SUPPORTED_TEST_TYPES))
+    
+        # (calculated) test_src_type
+        if args.test_src:
+            if args.test_src[0:4] == 'http':
+                kwargs['test_src_type'] = 'url'
+            else:
+                try:
+                    with open(args.test_src) as _: pass
+                    kwargs['test_src_type'] = 'raw'
+                except:
+                    parser.error('--test-src %s could not be found' % args.test_src)
 
-    # (optional)
-    if args.action:
-        if args.action in constants.SUPPORTED_ACTIONS:
-            argspec = inspect.getargspec(globals()[args.action])
-            required = argspec[0] if not argspec[3] else argspec[0][: -1 * len(argspec[3])]
-            for k in required:
-                if not k in kwargs or not kwargs[k]:
-                    parser.error('"%s" action requires following parameters: %s. "%s" not found.' % (args.action, ", ".join(required), k))
-            sys.exit(execute(args.action, kwargs, required))
-        else:
-            parser.error('"%s" action is not supported. Available options are: %s' % (args.action, ", ".join(constants.SUPPORTED_ACTIONS)))
+        # (optional) config_src
+        if args.config_src != None:
+            kwargs['config_src'] = args.config_src
 
-    # (required) app_id || app_src
-    # (optional) app_test_type
-    # (calculated) app_src_type
-    if args.app_id is None and args.app_src is None and args.test_type not in constants.NO_APP_SOURCE:
-        parser.error('--app-id OR --app-src is required')
-
-    kwargs['app_id'] = args.app_id
-    kwargs['app_src'] = args.app_src
-
-    if args.app_src:
-        if args.app_src[0:4] == 'http':
-            kwargs['app_src_type'] = 'url'
-        else:
-            try:
-                with open(args.app_src) as _: pass
-                kwargs['app_src_type'] = 'raw'
-            except:
-                parser.error('--app-src %s could not be found' % args.app_src)
-
-    # (required) test_id || test_src && test_type
-    if args.test_id == None and (args.test_src == None or args.test_type == None) and args.test_type not in constants.NO_TEST_SOURCE:
-        parser.error('--test-id OR --test-src and --test-type is required')
-
-    kwargs['test_id'] = args.test_id
-    kwargs['test_type'] = args.test_type
-    kwargs['test_src'] = args.test_src
-    if args.test_type not in constants.SUPPORTED_TEST_TYPES:
-        parser.error('--test-type must be one of the following: %s' % ', '.join(constants.SUPPORTED_TEST_TYPES))
-
-    # (calculated) test_src_type
-    if args.test_src:
-        if args.test_src[0:4] == 'http':
-            kwargs['test_src_type'] = 'url'
-        else:
-            try:
-                with open(args.test_src) as _: pass
-                kwargs['test_src_type'] = 'raw'
-            except:
-                parser.error('--test-src %s could not be found' % args.test_src)
-
-    # (optional) config_src
-    if args.config_src != None:
-        kwargs['config_src'] = args.config_src
-
-    # (required) device_type_id
-    kwargs['device_type_id'] = args.device_type_id
-
-    # (optional) result_dir
-    kwargs['result_dir'] = args.result_dir
-
-    # (optional) app name
-    kwargs['name'] = args.name
-
-    kwargs['url'] = args.url
-
-    # (optional) timeout
-    try:
-        kwargs['timeout_sec'] = int(args.timeout)
-    except:
-        pass
-
-    client = AppurifyClient(**kwargs)
-    sys.exit(client.main())
+        # (required) device_type_id
+        kwargs['device_type_id'] = args.device_type_id
+    
+        # (optional) result_dir
+        kwargs['result_dir'] = args.result_dir
+    
+        # (optional) app name
+        kwargs['name'] = args.name
+    
+        kwargs['url'] = args.url
+    
+        # (optional) timeout
+        try:
+            kwargs['timeout_sec'] = int(args.timeout)
+        except:
+            pass
+    
+        client = AppurifyClient(**kwargs)
+        sys.exit(client.main())
 
 if __name__ == '__main__':
-    init()
+    AppurifyClient.cli()
