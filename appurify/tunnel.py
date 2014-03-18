@@ -636,5 +636,8 @@ class Tunnel(object):
     
         Tunnel.run()
 
-if __name__ == '__main__':
+def init():
     Tunnel.cli()
+
+if __name__ == '__main__':
+    init()

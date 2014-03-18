@@ -9,7 +9,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from appurify.tunnel import Tunnel
+from appurify.tunnel import init
 
 if __name__ == '__main__':
-    Tunnel.cli()
+    init()

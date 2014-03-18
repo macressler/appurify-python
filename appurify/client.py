@@ -478,5 +478,8 @@ class AppurifyClient(object):
         client = AppurifyClient(**kwargs)
         sys.exit(client.main())
 
-if __name__ == '__main__':
+def init():
     AppurifyClient.cli()
+
+if __name__ == '__main__':
+    init()
