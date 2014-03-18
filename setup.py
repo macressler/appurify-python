@@ -22,6 +22,7 @@ setup(
     long_description=open('README.txt').read().strip(),
     packages=find_packages(),
     install_requires=open('requirements.txt', 'rb').read().strip().split(),
+    tests_require=open('requirements-test.txt', 'rb').read().strip().split(),
     entry_points={
         'console_scripts': [
             'appurify-client.py = appurify.client:init',
