@@ -11,7 +11,7 @@
 # Current development version
 # Increment this during development as and when desired
 # setup.py will use this version to generate new releases
-VERSION = (0, 4, 1)
+VERSION = (0, 4, 2)
 __version__ = '.'.join(map(str, VERSION[0:3])) + ''.join(VERSION[3:])
 
 # Last tagged stable version
@@ -88,7 +88,8 @@ SUPPORTED_TEST_TYPES = [
     'ios_monkeytalk',
     'android_robot',
     'android_monkeytalk',
-    'espresso'
+    'espresso',
+    'android_spoon'
 ]
 
 NO_TEST_SOURCE = [
@@ -114,6 +115,7 @@ NO_APP_SOURCE = [
     'ios_webviewrobot',
     'ios_wpt',
     'appium',
+    'android_spoon',
 ]
 
 ENABLED_ACTIONS = [
