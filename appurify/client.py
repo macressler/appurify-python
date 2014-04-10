@@ -15,6 +15,7 @@ import sys
 import time
 import pprint
 import inspect
+import requests
 
 from . import constants
 
@@ -188,6 +189,23 @@ class AppurifyClient(object):
 
         raise AppurifyClientError("Test result poll timed out after %s seconds" % timeout_limit, exit_code=constants.EXIT_CODE_TEST_TIMEOUT)
 
+    @staticmethod
+    def download_test_response(results_url, result_dir, verify=True):
+        if not os.path.exists(result_dir):
+            log("Attempting to create directory %s" % result_dir)
+            os.makedirs(result_dir)
+        if result_dir:
+            result_path = result_dir + '/' + 'results.zip'
+            log("Saving results to %s" % result_path)
+            try_count = 1
+            status_code = 0
+            while try_count <= constants.MAX_DOWNLOAD_RETRIES and status_code != 200:
+                time.sleep(try_count)
+                status_code = wget(results_url, result_path, verify)
+                try_count = try_count + 1
+            if try_count > constants.MAX_DOWNLOAD_RETRIES:
+                log("Error downloading url %s, failed after 5 retries" % results_url)
+
     def reportTestResult(self, test_status_response):
         log("== reportTestResult ==")
         log(json.dumps(test_status_response))
@@ -206,7 +224,7 @@ class AppurifyClient(object):
 
             if result_dir:
                 result_url = test_response[0]['url']
-                download_test_response(result_url, result_dir, self.verify_ssl)
+                self.download_test_response(result_url, result_dir, self.verify_ssl)
         
         detailed_status = test_status_response.get('detailed_status')
         if detailed_status == "exception":
@@ -251,27 +269,7 @@ class AppurifyClient(object):
             log("Error printing test results: %r" % e)
     
     @staticmethod
-    def download_test_response(results_url, result_dir, verify=True):
-        try:
-            if not os.path.exists(result_dir):
-                log("Attempting to create directory %s" % result_dir)
-                os.makedirs(result_dir)
-            if result_dir:
-                result_path = result_dir + '/' + 'results.zip'
-                log("Saving results to %s" % result_path)
-                try_count = 1
-                status_code = 0
-                while try_count <= constants.MAX_DOWNLOAD_RETRIES and status_code != 200:
-                    time.sleep(try_count)
-                    status_code = wget(results_url, result_path, verify)
-                    try_count = try_count + 1
-                if try_count > constants.MAX_DOWNLOAD_RETRIES:
-                    log("Error downloading url %s, failed after 5 retries" % results_url)
-        except Exception as e:
-            log("Error downloading test result file: %s" % e)
-    
-    @staticmethod
-    def print_multi_test_responses(test_response):
+    def print_multi_test_responses(self, test_response):
         response_pass = True
         for result in test_response:
             log("Device Type %s result:" % result['device_type'])
@@ -280,7 +278,7 @@ class AppurifyClient(object):
         return response_pass
     
     @staticmethod
-    def download_multi_test_response(test_response, result_dir, verify=True):
+    def download_multi_test_response(self, test_response, result_dir, verify=True):
         for result in test_response:
             try:
                 result_url = result['results']['url']
@@ -322,16 +320,16 @@ class AppurifyClient(object):
         except AppurifyClientError, e:
             log(str(e))
             exit_code = e.exit_code
-        
         except KeyboardInterrupt, e:
             self.abortTest(test_run_id, repr(e))
             log(str(e))
             exit_code = constants.EXIT_CODE_TEST_ABORT
-        """
-        except Exception, e:
+        except requests.exceptions.RequestException, e:
             log(str(e))
+            exit_code = constants.EXIT_CODE_CONNECTION_ERROR
+        except Exception, e:
+            log("%s : %s" % (sys.exc_traceback.tb_lineno , str(e)))
             exit_code = constants.EXIT_CODE_CLIENT_EXCEPTION
-        """
 
         log('done with exit code %s' % exit_code)
         return exit_code

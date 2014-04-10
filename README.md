@@ -69,6 +69,9 @@ Found a bug or want to add a much needed feature? Go for it and send us the Pull
 
 ## Release Notes
 
+### 0.4.3
+- Better handling around client/server connection errors (including SSL cert errors)
+
 ### 0.3.4
 - Add exit codes
 

@@ -36,7 +36,7 @@ class AppurifyHttpClient(object):
         self.url = self.url(self.resource)
         self.payload = payload
         self.files = files
-        
+
         if headers:
             assert type(headers) == dict
         else:
@@ -70,7 +70,7 @@ class AppurifyHttpClient(object):
     @staticmethod
     def port():
         return os.environ.get('APPURIFY_API_PORT', str(constants.API_PORT))
-    
+
     @staticmethod
     def user_agent(): # pragma: no cover
         """returns string representation of user-agent"""

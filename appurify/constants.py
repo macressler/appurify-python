@@ -11,7 +11,7 @@
 # Current development version
 # Increment this during development as and when desired
 # setup.py will use this version to generate new releases
-VERSION = (0, 4, 2)
+VERSION = (0, 4, 3)
 __version__ = '.'.join(map(str, VERSION[0:3])) + ''.join(VERSION[3:])
 
 # Last tagged stable version
@@ -54,6 +54,8 @@ EXIT_CODE_BAD_TEST = 5          # Test could not execute because there was an er
 EXIT_CODE_AUTH_FAILURE = 6      # Test could not execute because the server rejected the provided credentials (key/secret)
 EXIT_CODE_OTHER_EXCEPTION = 7   # Test could not execute because of other server/remote exception
 EXIT_CODE_CLIENT_EXCEPTION = 8  # Test could not execute because of an unexpected error in the client
+EXIT_CODE_CONNECTION_ERROR = 9  # Test got a connection error attempting to reach the server
+EXIT_CODE_APP_INSTALL_FAILED = 10 # The app could not be installed on the device (possibly due to incorrect build)
 
 # TODO: Probably should be fetching these from the server at some point
 EXIT_CODE_EXCEPTION_MAP = {EXIT_CODE_TEST_ABORT : [4000, 5000],
