@@ -64,6 +64,36 @@ class AppurifyClient(object):
                 raise AppurifyClientError('access_token_generate failed with response %s' % r.text, exit_code=constants.EXIT_CODE_AUTH_FAILURE)
         return self.access_token
 
+    def checkDevice(self):
+        response_device_list = devices_list(self.access_token)
+        data_device_list = json.loads(response_device_list.text.replace("'","\"")) 
+        device_id_list =[]
+        
+        for device in data_device_list["response"]:
+            device_id_list.append( device["device_type_id"])
+
+        if response_device_list.status_code == 200:
+            if int(self.device_type_id) not in device_id_list :
+                raise AppurifyClientError("Current device list does not include device type: %s" % self.device_type_id, exit_code=constants.EXIT_CODE_DEVICE_NOT_FOUND)
+
+    def checkAppCompatibility(self, app_src):
+        response_device_list = devices_list(self.access_token)
+        data_device_list = json.loads(response_device_list.text.replace("'","\"")) 
+        reservingDevice = -1
+        
+        for device in data_device_list["response"]:
+            if int(self.device_type_id) == device["device_type_id"]:
+                reservingDevice = device
+
+        #verify app type works with OS type of device
+        if int(response_device_list.status_code) == 200 and reservingDevice != -1:
+            devicePlatform = reservingDevice["os_name"].lower()
+            appType = app_src[-3:]
+            if (appType == "ipa" and devicePlatform == "android") or (appType == "apk" and devicePlatform == "ios"):
+                 raise AppurifyClientError("Must install .ipa on iOS device or .apk on android device.  Mismatch: %s installing onto an %s device." % (appType, devicePlatform), exit_code=constants.EXIT_CODE_APP_INCOMPATIBLE)
+        
+        
+
     def uploadApp(self):
         log('uploading app file...')
         app_src_type = self.args.get('app_src_type', None)
@@ -79,6 +109,7 @@ class AppurifyClient(object):
             if app_src is None:
                 raise AppurifyClientError("app src is required for test type %s" % self.test_type, exit_code=constants.EXIT_CODE_BAD_TEST)
             if app_src_type != 'url':
+                self.checkAppCompatibility(app_src)
                 with open(app_src, 'rb') as app_file_source:
                     r = apps_upload(self.access_token, app_file_source, app_src_type, app_src_type, app_name)
             else:
@@ -238,15 +269,21 @@ class AppurifyClient(object):
         return exit_code
 
     def getExceptionExitCode(self, test_response):
-        exit_code = constants.EXIT_CODE_OTHER_EXCEPTION
-        for response in test_response:
-            exception = response.get("exception", False)
-            if exception:
-                exception_code = exception.split(":")[0]
-                for key in constants.EXIT_CODE_EXCEPTION_MAP:
-                    if int(exception_code) in constants.EXIT_CODE_EXCEPTION_MAP[key]:
-                        return key
-        return exit_code
+        exit_code = constants.EXIT_CODE_CLIENT_EXCEPTION
+        try:
+            for response in test_response:
+                exception = response.get("exception", False)
+                if exception:
+                    exception_code = exception.split(":")[0]
+                    for key in constants.EXIT_CODE_EXCEPTION_MAP:
+                        try:
+                            #if exception code cannot pasre into int, means server didn't send correctly.
+                            if int(exception_code) in constants.EXIT_CODE_EXCEPTION_MAP[key]:
+                                return key
+                        except Exception: 
+                            exit_code = constants.EXIT_CODE_OTHER_EXCEPTION
+        finally:
+            return exit_code
 
     @staticmethod
     def print_single_test_response(test_response):
@@ -300,6 +337,8 @@ class AppurifyClient(object):
             if self.test_type is None:
                 raise AppurifyClientError("test_type is required")
 
+            self.checkDevice()
+            
             # upload app/test of use passed id's
             app_id = self.args.get('app_id', None) or self.uploadApp()
             test_id = self.args.get('test_id', None) or self.uploadTest(app_id)
@@ -307,6 +346,7 @@ class AppurifyClient(object):
             config_src = self.args.get('config_src', False)
             if config_src:
                 self.uploadConfig(test_id, config_src)
+
             
             # start test run
             test_run_id, queue_timeout_limit, configs = self.runTest(app_id, test_id)
