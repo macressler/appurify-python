@@ -75,11 +75,6 @@ class AppurifyClient(object):
         if response_device_list.status_code == 200:
             if int(self.device_type_id) not in device_id_list :
                 raise AppurifyClientError("Current device list does not include device type: %s" % self.device_type_id, exit_code=constants.EXIT_CODE_DEVICE_NOT_FOUND)
-        else:
-            #issue warning and continue
-            log("Invalid response from /devices/list/?access_token={ACCESS_TOKEN}.  Please contact Appurify for additional info")
-        
-
 
     def checkAppCompatibility(self, app_src):
         response_device_list = devices_list(self.access_token)
