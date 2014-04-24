@@ -281,7 +281,7 @@ class AppurifyClient(object):
                             if int(exception_code) in constants.EXIT_CODE_EXCEPTION_MAP[key]:
                                 return key
                         except Exception: 
-                            exit_Code = constants.EXIT_CODE_OTHER_EXCEPTION
+                            exit_code = constants.EXIT_CODE_OTHER_EXCEPTION
         finally:
             return exit_code
 
