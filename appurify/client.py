@@ -77,7 +77,7 @@ class AppurifyClient(object):
                 raise AppurifyClientError("Current device list does not include device type: %s" % self.device_type_id, exit_code=constants.EXIT_CODE_DEVICE_NOT_FOUND)
         else:
             #issue warning and continue
-            print "------------------------------------------------------------------------------------------------\nhttps://live.appurify.com/resource/devices/list/?access_token={ACCESS_TOKEN} is having technical issues.\nPlease contact Appurify for details.\n------------------------------------------------------------------------------------------------"
+            print "Invalid response from /devices/list/?access_token={ACCESS_TOKEN}.  Please contact Appurify for additional info" 
         
 
 
