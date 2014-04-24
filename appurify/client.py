@@ -77,7 +77,7 @@ class AppurifyClient(object):
                 raise AppurifyClientError("Current device list does not include device type: %s" % self.device_type_id, exit_code=constants.EXIT_CODE_DEVICE_NOT_FOUND)
         else:
             #issue warning and continue
-            print "Invalid response from /devices/list/?access_token={ACCESS_TOKEN}.  Please contact Appurify for additional info" 
+            log("Invalid response from /devices/list/?access_token={ACCESS_TOKEN}.  Please contact Appurify for additional info")
         
 
 
@@ -274,15 +274,19 @@ class AppurifyClient(object):
         return exit_code
 
     def getExceptionExitCode(self, test_response):
-        exit_code = constants.EXIT_CODE_OTHER_EXCEPTION
+        exit_code = constants.EXIT_CODE_CLIENT_EXCEPTION
         try:
             for response in test_response:
                 exception = response.get("exception", False)
                 if exception:
                     exception_code = exception.split(":")[0]
                     for key in constants.EXIT_CODE_EXCEPTION_MAP:
-                        if int(exception_code) in constants.EXIT_CODE_EXCEPTION_MAP[key]:
-                            return key
+                        try:
+                            #if exception code cannot pasre into int, means server didn't send correctly.
+                            if int(exception_code) in constants.EXIT_CODE_EXCEPTION_MAP[key]:
+                                return key
+                        except Exception: 
+                            exit_Code = constants.EXIT_CODE_OTHER_EXCEPTION
         finally:
             return exit_code
 
