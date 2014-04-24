@@ -45,19 +45,6 @@ API_STATUS_BASE_URL = 'https://s3-us-west-1.amazonaws.com/appurify-api-status'
 MAX_DOWNLOAD_RETRIES = 10           # Number of times client should try to download the test results before giving up
 
 # Exit codes
-<<<<<<< Updated upstream
-EXIT_CODE_ALL_PASS = 0          # Test completed with no exceptions or errors
-EXIT_CODE_TEST_FAILURE = 1      # Test completed normally but reported test failures
-EXIT_CODE_TEST_ABORT = 2        # Test was aborted by the user or system
-EXIT_CODE_TEST_TIMEOUT = 3      # Test was aborted by the system because of timeout
-EXIT_CODE_DEVICE_FAILURE = 4    # Test could not be completed because the device could not be activated or reserved
-EXIT_CODE_BAD_TEST = 5          # Test could not execute because there was an error in the configuration or uploaded files
-EXIT_CODE_AUTH_FAILURE = 6      # Test could not execute because the server rejected the provided credentials (key/secret)
-EXIT_CODE_OTHER_EXCEPTION = 7   # Test could not execute because of other server/remote exception
-EXIT_CODE_CLIENT_EXCEPTION = 8  # Test could not execute because of an unexpected error in the client
-EXIT_CODE_CONNECTION_ERROR = 9  # Test got a connection error attempting to reach the server
-EXIT_CODE_APP_INSTALL_FAILED = 10 # The app could not be installed on the device (possibly due to incorrect build)
-=======
 EXIT_CODE_ALL_PASS = 0              # Test completed with no exceptions or errors
 EXIT_CODE_TEST_FAILURE = 1          # Test completed normally but reported test failures
 EXIT_CODE_TEST_ABORT = 2            # Test was aborted by the user or system
@@ -74,7 +61,6 @@ EXIT_CODE_INVALID_DEVICE = 12       # Test could not execute because app is not 
 EXIT_CODE_DEVICE_NOT_FOUND = 13     # Device doesn't exist in users device pool
 EXIT_CODE_APP_INCOMPATIBLE = 14     # Device doesn't exist in users device pool
 EXIT_CODE_GRID_TIMEOUT = 15         # Test reached timeout for grid session 
->>>>>>> Stashed changes
 
 # TODO: Probably should be fetching these from the server at some point
 EXIT_CODE_EXCEPTION_MAP = {EXIT_CODE_TEST_ABORT : [4000, 5000],
