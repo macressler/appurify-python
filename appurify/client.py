@@ -73,8 +73,10 @@ class AppurifyClient(object):
             device_id_list.append( device["device_type_id"])
 
         if response_device_list.status_code == 200:
-            if int(self.device_type_id) not in device_id_list :
-                raise AppurifyClientError("Current device list does not include device type: %s" % self.device_type_id, exit_code=constants.EXIT_CODE_DEVICE_NOT_FOUND)
+            listOfDevices = self.device_type_id.split(',')
+            for d in listOfDevices:
+                if int(d) not in device_id_list :
+                    raise AppurifyClientError("Current device list does not include device type: %s" % d, exit_code=constants.EXIT_CODE_DEVICE_NOT_FOUND)
 
     def checkAppCompatibility(self, app_src):
         response_device_list = devices_list(self.access_token)
@@ -82,15 +84,17 @@ class AppurifyClient(object):
         reservingDevice = -1
         
         for device in data_device_list["response"]:
-            if int(self.device_type_id) == device["device_type_id"]:
-                reservingDevice = device
+            paramListDevices = self.device_type_id.split(',')
+            for d in paramListDevices :
+                if int(d) == device["device_type_id"]:
+                    reservingDevice = device
 
-        #verify app type works with OS type of device
-        if int(response_device_list.status_code) == 200 and reservingDevice != -1:
-            devicePlatform = reservingDevice["os_name"].lower()
-            appType = app_src[-3:]
-            if (appType == "ipa" and devicePlatform == "android") or (appType == "apk" and devicePlatform == "ios"):
-                 raise AppurifyClientError("Must install .ipa on iOS device or .apk on android device.  Mismatch: %s installing onto an %s device." % (appType, devicePlatform), exit_code=constants.EXIT_CODE_APP_INCOMPATIBLE)
+                #verify app type works with OS type of device
+                if reservingDevice != -1 and int(response_device_list.status_code) == 200:
+                    devicePlatform = reservingDevice["os_name"].lower()
+                    appType = app_src[-3:]
+                    if (appType == "ipa" and devicePlatform == "android") or (appType == "apk" and devicePlatform == "ios"):
+                         raise AppurifyClientError("Must install .ipa on iOS device or .apk on android device.  Mismatch: %s installing onto an %s device: %s" % (appType, devicePlatform, d), exit_code=constants.EXIT_CODE_APP_INCOMPATIBLE)
         
         
 
