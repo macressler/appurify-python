@@ -33,7 +33,7 @@ class AppurifyClient(object):
         self.args = kwargs
 
         self.access_token = self.args.get('access_token', None)
-        self.timeout = self.args.get('timeout_sec', None) or os.environ.get('APPURIFY_API_TIMEOUT', 10800)
+        self.timeout = self.args.get('timeout_sec', None) or os.environ.get('APPURIFY_API_TIMEOUT', None)
         if self.timeout is not None:
             self.timeout = float(self.timeout)
 
