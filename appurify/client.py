@@ -250,16 +250,16 @@ class AppurifyClient(object):
         result_dir = self.args.get('result_dir', None)
         
         if 'complete_count' in test_status_response:
-            response_pass = self.print_multi_test_responses(test_response)
+            response_pass = AppurifyClient.print_multi_test_responses(test_response)
             if result_dir:
-                self.download_multi_test_response(test_response, result_dir, self.verify_ssl)
+                AppurifyClient.download_multi_test_response(test_response, result_dir, self.verify_ssl)
         else:
-            response_pass = self.print_single_test_response(test_response)
+            response_pass = AppurifyClient.print_single_test_response(test_response)
             test_response = [test_response] # make sure test response has the same format in both cases
 
             if result_dir:
                 result_url = test_response[0]['url']
-                self.download_test_response(result_url, result_dir, self.verify_ssl)
+                AppurifyClient.download_test_response(result_url, result_dir, self.verify_ssl)
         
         detailed_status = test_status_response.get('detailed_status')
         if detailed_status == "exception":
@@ -310,11 +310,11 @@ class AppurifyClient(object):
             log("Error printing test results: %r" % e)
     
     @staticmethod
-    def print_multi_test_responses(self, test_response):
+    def print_multi_test_responses(test_response):
         response_pass = True
         for result in test_response:
             log("Device Type %s result:" % result['device_type'])
-            self.print_single_test_response(result["results"])
+            AppurifyClient.print_single_test_response(result["results"])
             log("\n")
         return response_pass
     
@@ -325,7 +325,7 @@ class AppurifyClient(object):
                 result_url = result['results']['url']
                 device_type_id = result['device_type_id']
                 device_result_path = result_dir + "/device_type_%s" % device_type_id
-                self.download_test_response(result_url, device_result_path, verify)
+                AppurifyClient.download_test_response(result_url, device_result_path, verify)
             except Exception as e:
                 log("Error downloading test response: %s" % e)
     
