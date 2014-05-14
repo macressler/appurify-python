@@ -237,6 +237,8 @@ class AppurifyClient(object):
             while try_count <= constants.MAX_DOWNLOAD_RETRIES and status_code != 200:
                 time.sleep(try_count)
                 status_code = wget(results_url, result_path, verify)
+                print results_url
+                print status_code
                 try_count = try_count + 1
             if try_count > constants.MAX_DOWNLOAD_RETRIES:
                 log("Error downloading url %s, failed after 5 retries" % results_url)
@@ -248,7 +250,7 @@ class AppurifyClient(object):
         exit_code = constants.EXIT_CODE_ALL_PASS
         test_response = test_status_response['results']
         result_dir = self.args.get('result_dir', None)
-        
+        result_dir = '.'
         if 'complete_count' in test_status_response:
             response_pass = AppurifyClient.print_multi_test_responses(test_response)
             if result_dir:
@@ -319,7 +321,7 @@ class AppurifyClient(object):
         return response_pass
     
     @staticmethod
-    def download_multi_test_response(self, test_response, result_dir, verify=True):
+    def download_multi_test_response(test_response, result_dir, verify=True):
         for result in test_response:
             try:
                 result_url = result['results']['url']
