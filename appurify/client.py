@@ -319,7 +319,7 @@ class AppurifyClient(object):
         return response_pass
     
     @staticmethod
-    def download_multi_test_response(self, test_response, result_dir, verify=True):
+    def download_multi_test_response(test_response, result_dir, verify=True):
         for result in test_response:
             try:
                 result_url = result['results']['url']
