@@ -26,7 +26,6 @@ setup(
     entry_points={
         'console_scripts': [
             'appurify-client.py = appurify.client:init',
-            'appurify-tunnel.py = appurify.tunnel:init'
         ]
     }
 )
