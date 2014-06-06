@@ -11,7 +11,7 @@
 # Current development version
 # Increment this during development as and when desired
 # setup.py will use this version to generate new releases
-VERSION = (0, 4, 7)
+VERSION = (0, 4, 8)
 __version__ = '.'.join(map(str, VERSION[0:3])) + ''.join(VERSION[3:])
 
 # Last tagged stable version
