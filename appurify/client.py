@@ -110,6 +110,9 @@ class AppurifyClient(object):
                 log('    To avoid this issue, please pass the url of the website under test using the --url parameter') 
             r = apps_upload(self.access_token, None, 'url', self.test_type, name=app_name, webapp_url=webapp_url)
         else:
+            app_size = os.path.getsize(app_src)
+            if app_size < 1 :
+                raise AppurifyClientError("A valid app must contain some data.  The uploaded app is empty.", exit_code=constants.EXIT_CODE_BAD_TEST)
             if app_src is None:
                 raise AppurifyClientError("app src is required for test type %s" % self.test_type, exit_code=constants.EXIT_CODE_BAD_TEST)
             if app_src_type != 'url':
@@ -132,6 +135,9 @@ class AppurifyClient(object):
         if not test_src and self.test_type not in constants.NO_TEST_SOURCE:
             raise AppurifyClientError('test_type %s requires a test source' % self.test_type, exit_code=constants.EXIT_CODE_BAD_TEST)
         if test_src:
+            test_size = os.path.getsize(test_src)
+            if test_size < 1 :
+                raise AppurifyClientError("Test requires something to exist inside test source.  The uploaded source is empty.", exit_code=constants.EXIT_CODE_BAD_TEST)
             if test_src_type != 'url':
                 with open(test_src, 'rb') as test_file_source:
                     r = tests_upload(self.access_token, test_file_source, test_src_type, self.test_type, app_id=app_id)
