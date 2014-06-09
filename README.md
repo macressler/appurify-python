@@ -62,6 +62,13 @@ To facilitate error reporting, the client will report one of the following error
 | 6  | Test could not execute because the server rejected the provided credentials|
 | 7  | Test could not execute because of other server/remote exception |
 | 8  | Test could not execute because of an unexpected error in the client |
+| 9  | Test got a connection error attempting to reach the server  |
+| 10  | The app could not be installed on the device (possibly due to incorrect build) |
+| 11  | Test could not execute because device type is not found in user pool  |
+| 12  | Test could not execute because app is not built for device type |
+| 13  |  Device doesn't exist in users device pool |
+| 14  |  App is not compabtible with device specified. |
+| 15  |  Test reached timeout for grid session |
 
 ### Contribution
 
@@ -69,7 +76,21 @@ Found a bug or want to add a much needed feature? Go for it and send us the Pull
 
 ## Release Notes
 
+### 0.4.9
+- User-abort now handled smoothly if run has not been uploaded to server and runID not generated.  
+
+### 0.4.8
+- An app or test srouce of size 0 will not be allowed nor uploaded to server.
+
+### 0.4.5
+- Bug fix of multiple devices trying when downloading results flag passed would fail.
+
 ### 0.4.3
+- Client will not allow upload of .ipa to android devices
+- Client will not allow upload of .apk to iOS devices
+- If device type is not in user pool, client will no allow run to upload to server
+
+## 0#.4
 - Better handling around client/server connection errors (including SSL cert errors)
 
 ### 0.3.4
