@@ -371,7 +371,10 @@ class AppurifyClient(object):
             log(str(e))
             exit_code = e.exit_code
         except KeyboardInterrupt, e:
-            self.abortTest(test_run_id, repr(e))
+            try:
+                self.abortTest(test_run_id, repr(e))
+            except UnboundLocalError, e:
+                log("Test stopped before session created on server. No run_id found.")
             log(str(e))
             exit_code = constants.EXIT_CODE_TEST_ABORT
         except requests.exceptions.RequestException, e:
