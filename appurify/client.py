@@ -110,11 +110,11 @@ class AppurifyClient(object):
                 log('    To avoid this issue, please pass the url of the website under test using the --url parameter') 
             r = apps_upload(self.access_token, None, 'url', self.test_type, name=app_name, webapp_url=webapp_url)
         else:
+            if app_src is None:
+                raise AppurifyClientError("app src is required for test type %s" % self.test_type, exit_code=constants.EXIT_CODE_BAD_TEST)
             app_size = os.path.getsize(app_src)
             if app_size < 1 :
                 raise AppurifyClientError("A valid app must contain some data.  The uploaded app is empty.", exit_code=constants.EXIT_CODE_BAD_TEST)
-            if app_src is None:
-                raise AppurifyClientError("app src is required for test type %s" % self.test_type, exit_code=constants.EXIT_CODE_BAD_TEST)
             if app_src_type != 'url':
                 self.checkAppCompatibility(app_src)
                 with open(app_src, 'rb') as app_file_source:
@@ -371,7 +371,10 @@ class AppurifyClient(object):
             log(str(e))
             exit_code = e.exit_code
         except KeyboardInterrupt, e:
-            self.abortTest(test_run_id, repr(e))
+            try:
+                self.abortTest(test_run_id, repr(e))
+            except UnboundLocalError, e:
+                log("Test stopped before session created on server. No run_id found.")
             log(str(e))
             exit_code = constants.EXIT_CODE_TEST_ABORT
         except requests.exceptions.RequestException, e:
